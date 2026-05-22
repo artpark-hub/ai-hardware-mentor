@@ -1,0 +1,373 @@
+
+<style>
+  h2.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font-sans,'Anthropic Sans',sans-serif)}
+  .wrap{padding:1.5rem 0}
+  .title-row{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .platform-title{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+  .platform-sub{font-size:13px;color:var(--color-text-secondary)}
+  .layer-grid{display:flex;flex-direction:column;gap:6px;margin-top:1rem}
+  .layer{border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);overflow:hidden;transition:box-shadow .2s}
+  .layer:hover{box-shadow:0 0 0 1.5px var(--color-border-secondary)}
+  .layer-header{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;user-select:none;background:var(--color-background-secondary)}
+  .layer-badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;flex-shrink:0}
+  .layer-name{font-size:14px;font-weight:500;color:var(--color-text-primary);flex:1}
+  .layer-tagline{font-size:12px;color:var(--color-text-secondary);margin-left:auto}
+  .layer-chevron{font-size:16px;color:var(--color-text-tertiary);transition:transform .25s;flex-shrink:0}
+  .layer-chevron.open{transform:rotate(180deg)}
+  .layer-body{display:none;padding:14px 16px;background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary)}
+  .layer-body.open{display:block}
+  .modules-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+  .mod-card{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s}
+  .mod-card:hover{border-color:var(--color-border-secondary);background:var(--color-background-primary)}
+  .mod-card-label{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+  .mod-card-sub{font-size:11px;color:var(--color-text-secondary);line-height:1.4}
+  .mod-icon{font-size:18px;margin-bottom:6px}
+  .flow-strip{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-top:10px}
+  .flow-step{font-size:11px;padding:5px 10px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);color:var(--color-text-secondary);white-space:nowrap}
+  .flow-arrow{font-size:12px;color:var(--color-text-tertiary);padding:0 4px}
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .tag{font-size:11px;padding:3px 9px;border-radius:20px;border:0.5px solid}
+  .live-panel{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px;margin-top:12px}
+  .live-header{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .pulse{width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .dash-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;border:0.5px solid var(--color-border-tertiary)}
+  .dash-card-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+  .dash-card-value{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+  .dash-card-delta{font-size:11px;margin-top:2px}
+  .progress-bar{height:4px;border-radius:2px;background:var(--color-border-tertiary);margin-top:6px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:2px;transition:width .6s}
+  .mentor-feed{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .feed-item{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--color-text-secondary);padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .feed-item:last-child{border-bottom:none}
+  .feed-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px}
+  .arch-flow{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+  .arch-row{display:flex;align-items:stretch;gap:6px}
+  .arch-box{flex:1;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 10px;font-size:11px;color:var(--color-text-secondary);text-align:center;min-height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  .arch-box-label{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+  .arch-connector{display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--color-text-tertiary);flex-shrink:0;width:20px}
+  .sensor-sim{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .sensor-item{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 10px}
+  .sensor-name{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+  .sensor-val{font-size:18px;font-weight:500;font-family:var(--font-mono)}
+  .sensor-unit{font-size:11px;color:var(--color-text-secondary);margin-left:2px}
+  .board-preview{border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:14px;margin-top:10px;position:relative;overflow:hidden}
+  .board-bg{width:100%;height:90px;background:var(--color-background-secondary);border-radius:8px;position:relative;display:flex;align-items:center;justify-content:center}
+  .pin-row{display:flex;gap:4px}
+  .pin{width:8px;height:8px;border-radius:50%;border:0.5px solid var(--color-border-secondary)}
+  .pin.live{animation:pinblink 1.2s ease-in-out infinite}
+  @keyframes pinblink{0%,100%{opacity:1}50%{opacity:.35}}
+  .board-label{font-size:11px;color:var(--color-text-tertiary);text-align:center;margin-top:6px}
+  .vlm-box{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px;margin-top:10px}
+  .vlm-msg{font-size:12px;color:var(--color-text-primary);margin-bottom:6px;display:flex;gap:6px;align-items:flex-start}
+  .vlm-badge{font-size:10px;padding:2px 6px;border-radius:20px;flex-shrink:0;background:var(--color-background-info);color:var(--color-text-info)}
+  .err-badge{background:var(--color-background-danger);color:var(--color-text-danger)}
+  .ok-badge{background:var(--color-background-success);color:var(--color-text-success)}
+</style>
+
+<h2 class="sr-only">AI-Augmented Mechatronics Learning Platform — 6-layer system architecture from hardware identification to real-time mentor dashboard</h2>
+
+<div class="wrap">
+  <div class="title-row">
+    <span class="platform-title">Omni-Route AI Platform</span>
+    <span class="platform-sub">Generic control-board learning infrastructure — electronics · mechatronics · programming</span>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+    <span class="tag" style="background:var(--color-background-secondary);border-color:var(--color-border-secondary);color:var(--color-text-secondary)"><i class="ti ti-cpu" aria-hidden="true" style="font-size:13px;vertical-align:-1px;margin-right:3px"></i>Hardware-agnostic</span>
+    <span class="tag" style="background:var(--color-background-secondary);border-color:var(--color-border-secondary);color:var(--color-text-secondary)"><i class="ti ti-eye" aria-hidden="true" style="font-size:13px;vertical-align:-1px;margin-right:3px"></i>VLM-powered vision</span>
+    <span class="tag" style="background:var(--color-background-secondary);border-color:var(--color-border-secondary);color:var(--color-text-secondary)"><i class="ti ti-augmented-reality" aria-hidden="true" style="font-size:13px;vertical-align:-1px;margin-right:3px"></i>AR ghost-lines</span>
+    <span class="tag" style="background:var(--color-background-secondary);border-color:var(--color-border-secondary);color:var(--color-text-secondary)"><i class="ti ti-users" aria-hidden="true" style="font-size:13px;vertical-align:-1px;margin-right:3px"></i>Live mentor sync</span>
+  </div>
+
+  <div class="layer-grid" id="layers"></div>
+</div>
+
+<script>
+const layers = [
+  {
+    id:'l0',
+    badge:'Layer 0',
+    badgeColor:'background:#E6F1FB;color:#185FA5;border-color:#B5D4F4',
+    name:'Hardware Identification & Specification',
+    tagline:'Board ID → Sensors → Actuators',
+    content: `
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">The learner declares or physically shows their control board. The platform identifies it via VLM vision detection or manual entry, loads the 3D digital twin, and inventories all connected sensors and actuators.</div>
+      <div class="arch-flow">
+        <div class="arch-row">
+          <div class="arch-box"><span class="arch-box-label">📷 Camera feed</span>Board shown to webcam</div>
+          <div class="arch-connector">→</div>
+          <div class="arch-box"><span class="arch-box-label">🔍 VLM Board Detect</span>Identify make & model</div>
+          <div class="arch-connector">→</div>
+          <div class="arch-box"><span class="arch-box-label">📋 Spec Loader</span>Load pinout + constraints</div>
+        </div>
+        <div class="arch-row" style="margin-top:4px">
+          <div class="arch-box" style="flex:0.6"><span class="arch-box-label">Or manual entry</span>Board name / MCU type</div>
+          <div class="arch-connector" style="visibility:hidden">→</div>
+          <div class="arch-box"><span class="arch-box-label">3D Digital Twin</span>AR model rendered live</div>
+          <div class="arch-connector">→</div>
+          <div class="arch-box"><span class="arch-box-label">360° View</span>Rotate & inspect model</div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">Sensor & Actuator inventory</div>
+        <div class="sensor-sim" id="sensor-sim">
+          <div class="sensor-item"><div class="sensor-name">Ultrasonic HC-SR04</div><div><span class="sensor-val" id="sv1">23</span><span class="sensor-unit">cm</span></div><div class="progress-bar"><div class="progress-fill" id="sp1" style="width:46%;background:#185FA5"></div></div></div>
+          <div class="sensor-item"><div class="sensor-name">DHT22 Temperature</div><div><span class="sensor-val" id="sv2">28.4</span><span class="sensor-unit">°C</span></div><div class="progress-bar"><div class="progress-fill" id="sp2" style="width:71%;background:#1D9E75"></div></div></div>
+          <div class="sensor-item"><div class="sensor-name">Servo SG90</div><div><span class="sensor-val" id="sv3">90</span><span class="sensor-unit">°</span></div><div class="progress-bar"><div class="progress-fill" id="sp3" style="width:50%;background:#BA7517"></div></div></div>
+          <div class="sensor-item"><div class="sensor-name">DC Motor L298N</div><div><span class="sensor-val" id="sv4">+PWM</span></div><div class="progress-bar"><div class="progress-fill" id="sp4" style="width:65%;background:#993C1D"></div></div></div>
+        </div>
+      </div>
+      <div class="board-preview">
+        <div class="board-bg">
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div class="pin-row" id="pin-row-top"></div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);padding:4px 20px;border:0.5px solid var(--color-border-secondary);border-radius:4px;background:var(--color-background-primary)">Arduino UNO / STM32 / ESP32</div>
+            <div class="pin-row" id="pin-row-bot"></div>
+          </div>
+        </div>
+        <div class="board-label">Live 360° board preview — rotate with camera or 3D model controls</div>
+      </div>
+    `
+  },
+  {
+    id:'l1',
+    badge:'Layer 1',
+    badgeColor:'background:#E1F5EE;color:#0F6E56;border-color:#9FE1CB',
+    name:'AR Guided Assembly',
+    tagline:'Ghost-lines → Real-time wiring overlay',
+    content:`
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">AR ghost-lines are rendered directly on the webcam feed showing the learner exactly where each wire connects. Supports both <em>build-from-scratch</em> and <em>inspect-existing-build</em> modes.</div>
+      <div class="modules-row">
+        <div class="mod-card" onclick="sendPrompt('Tell me more about the AR ghost-line rendering system')"><div class="mod-icon">🔦</div><div class="mod-card-label">Ghost-line renderer</div><div class="mod-card-sub">JSON-driven AR wire overlays on live feed</div></div>
+        <div class="mod-card" onclick="sendPrompt('How does 6-DoF board tracking work?')"><div class="mod-icon">📐</div><div class="mod-card-label">6-DoF board tracking</div><div class="mod-card-sub">VLM tracks board position & orientation</div></div>
+        <div class="mod-card" onclick="sendPrompt('What is the Assemble vs Inspect mode difference?')"><div class="mod-icon">🔄</div><div class="mod-card-label">Assemble / Inspect</div><div class="mod-card-sub">Build mode or verify pre-built robot platform</div></div>
+        <div class="mod-card" onclick="sendPrompt('Explain the 360 degree robot platform view')"><div class="mod-icon">🤖</div><div class="mod-card-label">Robot 360° view</div><div class="mod-card-sub">Full platform inspection for assembled builds</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin:10px 0 6px">Assembly flow</div>
+      <div class="flow-strip">
+        <div class="flow-step">Load circuit schema</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Detect board pose</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Render AR lines</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Learner traces wire</div><div class="flow-arrow">→</div>
+        <div class="flow-step">VLM verifies connection</div><div class="flow-arrow">→</div>
+        <div class="flow-step">Next step unlocked</div>
+      </div>
+    `
+  },
+  {
+    id:'l2',
+    badge:'Layer 2',
+    badgeColor:'background:#FAEEDA;color:#854F0B;border-color:#FAC775',
+    name:'VLM Verification & Error Correction',
+    tagline:'Vision → Reasoning → Voice feedback',
+    content:`
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">The backend VLM continuously monitors the camera feed, compares the learner's build against the ground truth circuit, and issues corrective voice/text guidance in real time.</div>
+      <div class="vlm-box">
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">Live VLM feedback stream</div>
+        <div class="vlm-msg"><span class="vlm-badge ok-badge">OK</span><span>Pin D9 → Servo signal line confirmed ✓</span></div>
+        <div class="vlm-msg"><span class="vlm-badge err-badge">ERR</span><span>Move sensor signal from Pin 3 to Pin 2 — GND lead appears reversed</span></div>
+        <div class="vlm-msg"><span class="vlm-badge ok-badge">OK</span><span>Ground connections verified on all modules ✓</span></div>
+        <div class="vlm-msg"><span class="vlm-badge" style="background:var(--color-background-warning);color:var(--color-text-warning)">WARN</span><span>Motor driver Vcc floating — connect to 5 V rail before power-on</span></div>
+      </div>
+      <div class="modules-row" style="margin-top:12px">
+        <div class="mod-card"><div class="mod-icon">🧠</div><div class="mod-card-label">VLM backend</div><div class="mod-card-sub">Gemini 1.5 / GPT-4o via FastAPI</div></div>
+        <div class="mod-card"><div class="mod-icon">🔊</div><div class="mod-card-label">Voice feedback</div><div class="mod-card-sub">ElevenLabs / Web Speech API</div></div>
+        <div class="mod-card"><div class="mod-icon">🛡️</div><div class="mod-card-label">AI guardrail</div><div class="mod-card-sub">Blocks code flash until 100% verified</div></div>
+      </div>
+    `
+  },
+  {
+    id:'l3',
+    badge:'Layer 3',
+    badgeColor:'background:#FBEAF0;color:#993556;border-color:#F4C0D1',
+    name:'Build & Test Pipeline',
+    tagline:'Verify → Flash → Heartbeat → Iterate',
+    content:`
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">After hardware verification, the platform auto-compiles and flashes firmware via WebSerial. Automated heartbeat checks confirm successful bring-up. Works for both fresh builds and pre-assembled platforms.</div>
+      <div class="arch-flow">
+        <div class="arch-row">
+          <div class="arch-box"><span class="arch-box-label">Hardware OK</span>100% pins verified</div>
+          <div class="arch-connector">→</div>
+          <div class="arch-box"><span class="arch-box-label">Code compiler</span>Build firmware</div>
+          <div class="arch-connector">→</div>
+          <div class="arch-box"><span class="arch-box-label">WebSerial flash</span>Push to board via USB</div>
+        </div>
+        <div class="arch-row" style="margin-top:4px">
+          <div class="arch-box"><span class="arch-box-label">Heartbeat check</span>Serial monitor ping</div>
+          <div class="arch-connector">→</div>
+          <div class="arch-box"><span class="arch-box-label">Sensor readback</span>Live telemetry confirmed</div>
+          <div class="arch-connector">→</div>
+          <div class="arch-box"><span class="arch-box-label">Actuator test</span>Command → verify motion</div>
+        </div>
+      </div>
+      <div class="tag-row">
+        <span class="tag" style="background:var(--color-background-success);border-color:var(--color-background-success);color:var(--color-text-success)">Arduino IDE compatible</span>
+        <span class="tag" style="background:var(--color-background-success);border-color:var(--color-background-success);color:var(--color-text-success)">PlatformIO</span>
+        <span class="tag" style="background:var(--color-background-success);border-color:var(--color-background-success);color:var(--color-text-success)">MicroPython</span>
+        <span class="tag" style="background:var(--color-background-success);border-color:var(--color-background-success);color:var(--color-text-success)">ROS2 bridge</span>
+        <span class="tag" style="background:var(--color-background-success);border-color:var(--color-background-success);color:var(--color-text-success)">ESP-IDF</span>
+      </div>
+    `
+  },
+  {
+    id:'l4',
+    badge:'Layer 4',
+    badgeColor:'background:#EEEDFE;color:#534AB7;border-color:#AFA9EC',
+    name:'Platform Abstraction & Template Engine',
+    tagline:'Hardware-agnostic scaling layer',
+    content:`
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">The core intellectual property — once the vision-tracking and VLM reasoning is proven on Arduino, the same template engine adapts to any board. Plug in a new board spec JSON and the whole platform auto-configures.</div>
+      <div class="modules-row">
+        <div class="mod-card" onclick="sendPrompt('How does the board template system work for different microcontrollers?')"><div class="mod-icon">📦</div><div class="mod-card-label">Board template store</div><div class="mod-card-sub">JSON specs for Arduino, STM32, ESP32, RPi Pico…</div></div>
+        <div class="mod-card" onclick="sendPrompt('What is the circuit schema format used by the platform?')"><div class="mod-icon">🗂️</div><div class="mod-card-label">Circuit schema library</div><div class="mod-card-sub">Reusable wiring diagrams per experiment</div></div>
+        <div class="mod-card" onclick="sendPrompt('How does the robot platform 360 degree view work?')"><div class="mod-icon">🤖</div><div class="mod-card-label">Robot library</div><div class="mod-card-sub">DIY kit → ₹2L research bot, 360° inspect</div></div>
+        <div class="mod-card" onclick="sendPrompt('What analytics does the platform collect?')"><div class="mod-icon">📊</div><div class="mod-card-label">Error heatmaps</div><div class="mod-card-sub">Track common wiring mistakes across cohorts</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin:12px 0 6px">Supported board families</div>
+      <div class="flow-strip">
+        <div class="flow-step">Arduino UNO / Mega</div><div class="flow-arrow">·</div>
+        <div class="flow-step">STM32 Nucleo</div><div class="flow-arrow">·</div>
+        <div class="flow-step">ESP32 / ESP8266</div><div class="flow-arrow">·</div>
+        <div class="flow-step">RPi Pico</div><div class="flow-arrow">·</div>
+        <div class="flow-step">BeagleBone</div><div class="flow-arrow">·</div>
+        <div class="flow-step">Custom PCBs</div>
+      </div>
+    `
+  },
+  {
+    id:'l5',
+    badge:'Layer 5',
+    badgeColor:'background:#EAF3DE;color:#3B6D11;border-color:#C0DD97',
+    name:'Learner & Mentor Dashboard — Live Sync',
+    tagline:'Real-time co-presence across all sessions',
+    content:`
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px">Learner and mentor dashboards update simultaneously. Mentors see every student's live build status, error frequency, and step progress in one view — freeing them from walking desk-to-desk for Level-1 issues.</div>
+      <div class="live-panel">
+        <div class="live-header"><span class="pulse"></span>Live session · 3 learners active</div>
+        <div class="dash-grid">
+          <div class="dash-card"><div class="dash-card-label">Avg. step completion</div><div class="dash-card-value" id="dc1">73%</div><div class="progress-bar"><div class="progress-fill" id="df1" style="width:73%;background:#3B6D11"></div></div></div>
+          <div class="dash-card"><div class="dash-card-label">VLM errors resolved</div><div class="dash-card-value" id="dc2">12</div><div class="dash-card-delta" style="color:var(--color-text-success)">↑ 4 this minute</div></div>
+          <div class="dash-card"><div class="dash-card-label">Mentor interventions</div><div class="dash-card-value" id="dc3">2</div><div class="dash-card-delta" style="color:var(--color-text-secondary)">↓ 85% vs manual lab</div></div>
+          <div class="dash-card"><div class="dash-card-label">Boards verified</div><div class="dash-card-value" id="dc4">2 / 3</div><div class="progress-bar"><div class="progress-fill" id="df4" style="width:66%;background:#185FA5"></div></div></div>
+        </div>
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin:12px 0 6px">Mentor feed — real-time flags</div>
+        <div class="mentor-feed" id="mfeed">
+          <div class="feed-item"><span class="feed-dot" style="background:#22c55e"></span><span><strong>Learner A</strong> — Pin mapping complete, flashing firmware ✓</span></div>
+          <div class="feed-item"><span class="feed-dot" style="background:#f59e0b"></span><span><strong>Learner B</strong> — VLM: GND reversed on motor driver — auto-correction sent</span></div>
+          <div class="feed-item"><span class="feed-dot" style="background:#3b82f6"></span><span><strong>Learner C</strong> — Waiting on sensor selection · Step 3 of 8</span></div>
+        </div>
+      </div>
+      <div class="modules-row" style="margin-top:12px">
+        <div class="mod-card"><div class="mod-icon">🧑‍🎓</div><div class="mod-card-label">Learner view</div><div class="mod-card-sub">Step progress, AR guidance, code flash status</div></div>
+        <div class="mod-card"><div class="mod-icon">🧑‍🏫</div><div class="mod-card-label">Mentor view</div><div class="mod-card-sub">All students · error heatmap · intervene button</div></div>
+        <div class="mod-card"><div class="mod-icon">📡</div><div class="mod-card-label">WebSocket sync</div><div class="mod-card-sub">Sub-second state propagation, both directions</div></div>
+        <div class="mod-card"><div class="mod-icon">📈</div><div class="mod-card-label">Session analytics</div><div class="mod-card-sub">Error patterns, time-on-step, cohort heatmaps</div></div>
+      </div>
+    `
+  }
+];
+
+function buildPins(id, count, liveIndices){
+  const el = document.getElementById(id);
+  if(!el) return;
+  for(let i=0;i<count;i++){
+    const p = document.createElement('div');
+    p.className = 'pin' + (liveIndices.includes(i) ? ' live' : '');
+    p.style.background = liveIndices.includes(i) ? '#22c55e' : 'var(--color-border-secondary)';
+    el.appendChild(p);
+  }
+}
+
+function buildLayers(){
+  const container = document.getElementById('layers');
+  layers.forEach(l => {
+    const div = document.createElement('div');
+    div.className = 'layer';
+    div.innerHTML = `
+      <div class="layer-header" onclick="toggleLayer('${l.id}')">
+        <span class="layer-badge" style="${l.badgeColor};border:0.5px solid">${l.badge}</span>
+        <span class="layer-name">${l.name}</span>
+        <span class="layer-tagline">${l.tagline}</span>
+        <i class="ti ti-chevron-down layer-chevron" id="chev-${l.id}" aria-hidden="true"></i>
+      </div>
+      <div class="layer-body" id="body-${l.id}">${l.content}</div>
+    `;
+    container.appendChild(div);
+  });
+  toggleLayer('l5');
+  buildPins('pin-row-top', 14, [2,5,9,11]);
+  buildPins('pin-row-bot', 14, [1,4,7,12]);
+}
+
+function toggleLayer(id){
+  const body = document.getElementById('body-'+id);
+  const chev = document.getElementById('chev-'+id);
+  if(!body) return;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chev.classList.toggle('open', !isOpen);
+}
+
+buildLayers();
+
+const sensorData = [
+  {id:'sv1', pid:'sp1', min:10, max:60, unit:'cm', color:'#185FA5'},
+  {id:'sv2', pid:'sp2', min:24, max:34, unit:'°C', color:'#1D9E75'},
+  {id:'sv3', pid:'sp3', min:0, max:180, unit:'°', color:'#BA7517'},
+];
+setInterval(()=>{
+  sensorData.forEach(s=>{
+    const v = +(s.min + Math.random()*(s.max - s.min)).toFixed(1);
+    const el = document.getElementById(s.id);
+    const pb = document.getElementById(s.pid);
+    if(el) el.textContent = v;
+    if(pb){
+      const pct = Math.round((v - s.min)/(s.max - s.min)*100);
+      pb.style.width = pct+'%';
+    }
+  });
+  const metrics = [
+    {id:'dc1', min:60, max:98, suffix:'%', df:'df1'},
+    {id:'dc2', min:8, max:20, suffix:''},
+    {id:'dc3', min:1, max:4, suffix:''},
+  ];
+  metrics.forEach(m=>{
+    const v = Math.round(m.min + Math.random()*(m.max-m.min));
+    const el = document.getElementById(m.id);
+    if(el) el.textContent = v + m.suffix;
+    if(m.df){
+      const bar = document.getElementById(m.df);
+      if(bar) bar.style.width = v + '%';
+    }
+  });
+}, 2200);
+
+const feedMessages = [
+  ['#22c55e','<strong>Learner A</strong> — Pin mapping complete, flashing firmware ✓'],
+  ['#f59e0b','<strong>Learner B</strong> — VLM: GND reversed on motor driver — auto-correction sent'],
+  ['#3b82f6','<strong>Learner C</strong> — Waiting on sensor selection · Step 3 of 8'],
+  ['#22c55e','<strong>Learner A</strong> — Heartbeat confirmed, motor test running'],
+  ['#f59e0b','<strong>Learner B</strong> — Step retried · correction accepted ✓'],
+  ['#a855f7','<strong>Learner D</strong> — Joined session · Arduino UNO detected'],
+  ['#22c55e','<strong>Learner C</strong> — Ultrasonic sensor calibrated · step 4 unlocked'],
+];
+let feedIdx = 3;
+setInterval(()=>{
+  const feed = document.getElementById('mfeed');
+  if(!feed) return;
+  const msg = feedMessages[feedIdx % feedMessages.length];
+  feedIdx++;
+  const item = document.createElement('div');
+  item.className = 'feed-item';
+  item.style.opacity = '0';
+  item.style.transition = 'opacity .4s';
+  item.innerHTML = `<span class="feed-dot" style="background:${msg[0]}"></span><span>${msg[1]}</span>`;
+  feed.insertBefore(item, feed.firstChild);
+  if(feed.children.length > 4) feed.removeChild(feed.lastChild);
+  requestAnimationFrame(()=>{ item.style.opacity = '1'; });
+}, 3800);
+</script>
