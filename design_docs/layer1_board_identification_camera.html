@@ -1,0 +1,486 @@
+
+<h2 class="sr-only">Layer 0 — Board identification interface: live camera feed simulation, VLM board detection, pinout spec loader, sensor and actuator inventory, and 360-degree digital twin viewer</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.w{padding:1rem 0}
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.layer-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;background:var(--color-background-info);color:var(--color-text-info);border:0.5px solid var(--color-border-info)}
+.topbar-title{font-size:14px;font-weight:500;color:var(--color-text-primary);flex:1}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--color-text-success);animation:pu 1.4s ease-in-out infinite;display:inline-block}
+@keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.65)}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.125rem}
+.ct{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
+.ct i{font-size:15px}
+.cam-frame{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);aspect-ratio:4/3;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.cam-scan{position:absolute;top:0;left:0;right:0;height:2px;background:var(--color-border-info);animation:scan 2.2s linear infinite;opacity:.7}
+@keyframes scan{0%{top:0}100%{top:100%}}
+.cam-corner{position:absolute;width:18px;height:18px;border-color:var(--color-border-info);border-style:solid;opacity:.8}
+.cam-tl{top:8px;left:8px;border-width:2px 0 0 2px;border-radius:2px 0 0 0}
+.cam-tr{top:8px;right:8px;border-width:2px 2px 0 0;border-radius:0 2px 0 0}
+.cam-bl{bottom:8px;left:8px;border-width:0 0 2px 2px;border-radius:0 0 0 2px}
+.cam-br{bottom:8px;right:8px;border-width:0 2px 2px 0;border-radius:0 0 2px 0}
+.board-svg-wrap{width:70%;max-width:220px;position:relative}
+.detect-box{position:absolute;border:1.5px solid var(--color-border-success);border-radius:4px;animation:dblink .9s ease-in-out infinite}
+@keyframes dblink{0%,100%{opacity:1}50%{opacity:.4}}
+.cam-label{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:var(--color-background-info);color:var(--color-text-info);font-size:10px;font-weight:500;padding:3px 10px;border-radius:20px;border:0.5px solid var(--color-border-info);white-space:nowrap}
+.cam-label.ok{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.status-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;font-size:12px}
+.status-row:last-child{margin-bottom:0}
+.s-icon{font-size:14px;flex-shrink:0}
+.s-label{flex:1;color:var(--color-text-primary)}
+.s-val{font-size:11px;color:var(--color-text-secondary)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;border:0.5px solid}
+.b-ok{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.b-info{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.b-warn{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.b-pend{background:var(--color-background-secondary);color:var(--color-text-tertiary);border-color:var(--color-border-tertiary)}
+.pinout-wrap{overflow-x:auto}
+.pinout-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;min-width:340px}
+.pin{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pin-num{width:24px;height:24px;border-radius:50%;border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;transition:all .15s}
+.pin-num:hover{border-color:var(--color-border-info);color:var(--color-text-info);background:var(--color-background-info)}
+.pin-num.pwr{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.pin-num.pwm{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.pin-num.gnd{background:var(--color-background-secondary);color:var(--color-text-tertiary)}
+.pin-num.ana{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.pin-num.used{border-width:2px}
+.pin-lbl{font-size:8px;color:var(--color-text-tertiary);text-align:center;max-width:28px;line-height:1.2}
+.twin-frame{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer}
+.twin-frame:hover .twin-hint{opacity:1}
+.twin-hint{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--color-text-secondary);opacity:0;transition:opacity .2s;white-space:nowrap;background:var(--color-background-primary);padding:2px 8px;border-radius:20px;border:0.5px solid var(--color-border-tertiary)}
+.rotate-anim{animation:rot 8s linear infinite}
+@keyframes rot{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
+.sensor-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:5px;cursor:pointer;transition:all .15s}
+.sensor-chip:hover{border-color:var(--color-border-secondary);background:var(--color-background-secondary)}
+.sensor-chip:last-child{margin-bottom:0}
+.chip-icon{font-size:16px;flex-shrink:0}
+.chip-name{font-size:12px;font-weight:500;color:var(--color-text-primary);flex:1}
+.chip-pin{font-size:11px;color:var(--color-text-secondary)}
+.chip-val{font-size:12px;font-weight:500;font-family:var(--font-mono);min-width:52px;text-align:right}
+.bar{height:3px;border-radius:2px;background:var(--color-border-tertiary);margin-top:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px;transition:width .6s}
+.log-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;max-height:130px;overflow-y:auto}
+.log-line{font-size:11px;font-family:var(--font-mono);color:var(--color-text-secondary);padding:1px 0;display:flex;gap:8px}
+.log-ts{color:var(--color-text-tertiary);flex-shrink:0}
+.log-ok{color:var(--color-text-success)}
+.log-info{color:var(--color-text-info)}
+.log-warn{color:var(--color-text-warning)}
+.prog-ring{display:flex;align-items:center;gap:10px}
+.prog-bar-wrap{flex:1;height:5px;background:var(--color-border-tertiary);border-radius:3px;overflow:hidden}
+.prog-bar-fill{height:100%;border-radius:3px;background:var(--color-text-success);transition:width 1.2s}
+.btnrow{display:flex;justify-content:flex-end;gap:8px;margin-top:1rem}
+.tooltip{position:absolute;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 10px;font-size:11px;color:var(--color-text-primary);pointer-events:none;z-index:10;display:none;white-space:nowrap}
+</style>
+
+<div class="w">
+
+<div class="topbar">
+  <span class="layer-badge">Layer 0</span>
+  <span class="topbar-title">Board identification — camera feed active</span>
+  <span class="pulse-dot"></span>
+  <span style="font-size:11px;color:var(--color-text-success);margin-left:2px">Live</span>
+</div>
+
+<div class="grid2">
+
+  <div class="card" style="grid-column:1">
+    <div class="ct"><i class="ti ti-camera" aria-hidden="true"></i> Camera feed</div>
+    <div class="cam-frame" id="cam-frame">
+      <div class="cam-scan" id="cam-scan"></div>
+      <div class="cam-corner cam-tl"></div>
+      <div class="cam-corner cam-tr"></div>
+      <div class="cam-corner cam-bl"></div>
+      <div class="cam-corner cam-br"></div>
+      <div class="board-svg-wrap" id="board-svg-wrap">
+        <svg viewBox="0 0 200 130" style="width:100%;display:block">
+          <rect x="4" y="4" width="192" height="122" rx="6" fill="var(--color-background-secondary)" stroke="var(--color-border-secondary)" stroke-width="1"/>
+          <rect x="12" y="14" width="80" height="50" rx="3" fill="var(--color-background-primary)" stroke="var(--color-border-secondary)" stroke-width="0.7"/>
+          <text x="52" y="43" text-anchor="middle" font-size="7" fill="var(--color-text-secondary)" font-family="var(--font-sans)">ATmega328P</text>
+          <rect x="104" y="18" width="28" height="18" rx="2" fill="var(--color-background-primary)" stroke="var(--color-border-secondary)" stroke-width="0.7"/>
+          <text x="118" y="29" text-anchor="middle" font-size="6" fill="var(--color-text-secondary)" font-family="var(--font-sans)">USB</text>
+          <rect x="104" y="44" width="22" height="14" rx="2" fill="var(--color-background-primary)" stroke="var(--color-border-secondary)" stroke-width="0.7"/>
+          <text x="115" y="53" text-anchor="middle" font-size="5.5" fill="var(--color-text-secondary)" font-family="var(--font-sans)">RESET</text>
+          <g id="pins-top">
+            <rect x="10" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+            <rect x="20" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+            <rect x="30" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+            <rect x="40" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+            <rect x="50" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+            <rect x="60" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+            <rect x="70" y="4" width="5" height="8" rx="1" fill="#5DCAA5"/>
+            <rect x="80" y="4" width="5" height="8" rx="1" fill="#5DCAA5"/>
+            <rect x="150" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+            <rect x="162" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+            <rect x="174" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+            <rect x="186" y="4" width="5" height="8" rx="1" fill="var(--color-border-secondary)"/>
+          </g>
+          <g id="pins-bot">
+            <rect x="10" y="118" width="5" height="8" rx="1" fill="#EF9F27"/>
+            <rect x="20" y="118" width="5" height="8" rx="1" fill="#EF9F27"/>
+            <rect x="30" y="118" width="5" height="8" rx="1" fill="#EF9F27"/>
+            <rect x="40" y="118" width="5" height="8" rx="1" fill="#EF9F27"/>
+            <rect x="50" y="118" width="5" height="8" rx="1" fill="#EF9F27"/>
+            <rect x="60" y="118" width="5" height="8" rx="1" fill="#EF9F27"/>
+            <rect x="70" y="118" width="5" height="8" rx="1" fill="#E24B4A"/>
+            <rect x="80" y="118" width="5" height="8" rx="1" fill="#888780"/>
+            <rect x="90" y="118" width="5" height="8" rx="1" fill="#888780"/>
+          </g>
+          <text x="52" y="80" text-anchor="middle" font-size="8" font-weight="500" fill="var(--color-text-primary)" font-family="var(--font-sans)">Arduino UNO R3</text>
+          <text x="52" y="92" text-anchor="middle" font-size="6" fill="var(--color-text-secondary)" font-family="var(--font-sans)">ATmega328P · 16MHz · 32KB</text>
+          <circle cx="160" cy="88" r="8" fill="none" stroke="#5DCAA5" stroke-width="1"/>
+          <text x="160" y="92" text-anchor="middle" font-size="5" fill="var(--color-text-success)" font-family="var(--font-sans)">PWR</text>
+        </svg>
+        <div class="detect-box" id="detect-box" style="top:10%;left:5%;right:5%;bottom:10%;display:none"></div>
+      </div>
+      <div class="cam-label" id="cam-label">Scanning for board...</div>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button style="flex:1;font-size:11px;padding:6px" onclick="startDetect()"><i class="ti ti-scan" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> Start detection</button>
+      <button style="flex:1;font-size:11px;padding:6px" id="btn-manual" onclick="showManual()"><i class="ti ti-keyboard" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> Manual entry</button>
+    </div>
+
+    <div id="manual-entry" style="display:none;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:5px">Board name / MCU</div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="manual-board" placeholder="e.g. Arduino UNO" style="font-size:12px;flex:1">
+        <button style="font-size:11px;padding:6px 12px" onclick="loadManual()">Load</button>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <i class="ti ti-cpu s-icon" style="color:var(--color-text-info)" aria-hidden="true"></i>
+      <span class="s-label">Board detected</span>
+      <span class="badge b-ok" id="st-detect">Arduino UNO R3</span>
+    </div>
+    <div class="status-row">
+      <i class="ti ti-map s-icon" style="color:var(--color-text-info)" aria-hidden="true"></i>
+      <span class="s-label">Pinout spec loaded</span>
+      <span class="badge b-ok" id="st-spec">20 pins · 6 PWM</span>
+    </div>
+    <div class="status-row">
+      <i class="ti ti-3d-cube-sphere s-icon" style="color:var(--color-text-success)" aria-hidden="true"></i>
+      <span class="s-label">Digital twin</span>
+      <span class="badge b-ok" id="st-twin">Rendered</span>
+    </div>
+    <div class="status-row">
+      <i class="ti ti-augmented-reality s-icon" style="color:var(--color-text-secondary)" aria-hidden="true"></i>
+      <span class="s-label">6-DoF tracking</span>
+      <span class="badge b-info" id="st-track">Active</span>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+
+    <div class="card">
+      <div class="ct"><i class="ti ti-circuit-board" aria-hidden="true"></i> Board spec</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+        <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px;text-align:center">
+          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">MCU</div>
+          <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">ATmega<br>328P</div>
+        </div>
+        <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px;text-align:center">
+          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">Clock</div>
+          <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">16 MHz</div>
+        </div>
+        <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px;text-align:center">
+          <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">Flash</div>
+          <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">32 KB</div>
+        </div>
+      </div>
+
+      <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px">Pin map</div>
+      <div class="pinout-wrap">
+        <div class="pinout-grid" id="pinout-grid"></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--color-text-secondary)"><span style="width:8px;height:8px;border-radius:50%;background:var(--color-background-info);border:0.5px solid var(--color-border-info);display:inline-block"></span>PWM</span>
+        <span style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--color-text-secondary)"><span style="width:8px;height:8px;border-radius:50%;background:var(--color-background-warning);border:0.5px solid var(--color-border-warning);display:inline-block"></span>Analog</span>
+        <span style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--color-text-secondary)"><span style="width:8px;height:8px;border-radius:50%;background:var(--color-background-danger);border:0.5px solid var(--color-border-danger);display:inline-block"></span>Power</span>
+        <span style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--color-text-secondary)"><span style="width:8px;height:8px;border-radius:50%;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:inline-block"></span>GND</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct"><i class="ti ti-3d-cube-sphere" aria-hidden="true"></i> 360° digital twin <span style="font-size:10px;font-weight:400;color:var(--color-text-tertiary);margin-left:4px">click to rotate</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="twin-frame" id="twin-front" onclick="rotateTwin('front')" title="Front view">
+          <svg viewBox="0 0 120 80" style="width:85%;display:block" class="rotate-anim" id="twin-svg">
+            <rect x="5" y="8" width="110" height="64" rx="5" fill="var(--color-background-secondary)" stroke="var(--color-border-secondary)" stroke-width="1"/>
+            <rect x="14" y="16" width="44" height="28" rx="2" fill="var(--color-background-primary)" stroke="var(--color-border-secondary)" stroke-width="0.7"/>
+            <text x="36" y="33" text-anchor="middle" font-size="4.5" fill="var(--color-text-secondary)" font-family="var(--font-sans)">ATmega328P</text>
+            <rect x="68" y="18" width="16" height="10" rx="1.5" fill="var(--color-background-primary)" stroke="var(--color-border-secondary)" stroke-width="0.7"/>
+            <text x="76" y="25" text-anchor="middle" font-size="3.5" fill="var(--color-text-secondary)" font-family="var(--font-sans)">USB-B</text>
+            <rect x="68" y="34" width="13" height="8" rx="1.5" fill="var(--color-background-primary)" stroke="var(--color-border-secondary)" stroke-width="0.7"/>
+            <text x="74.5" y="40" text-anchor="middle" font-size="3" fill="var(--color-text-secondary)" font-family="var(--font-sans)">RESET</text>
+            <g>
+              <rect x="10" y="8" width="3" height="5" rx="0.5" fill="var(--color-border-secondary)"/>
+              <rect x="16" y="8" width="3" height="5" rx="0.5" fill="var(--color-border-secondary)"/>
+              <rect x="22" y="8" width="3" height="5" rx="0.5" fill="var(--color-border-secondary)"/>
+              <rect x="28" y="8" width="3" height="5" rx="0.5" fill="var(--color-border-secondary)"/>
+              <rect x="34" y="8" width="3" height="5" rx="0.5" fill="#5DCAA5"/>
+              <rect x="40" y="8" width="3" height="5" rx="0.5" fill="#5DCAA5"/>
+              <rect x="88" y="8" width="3" height="5" rx="0.5" fill="var(--color-border-secondary)"/>
+              <rect x="94" y="8" width="3" height="5" rx="0.5" fill="var(--color-border-secondary)"/>
+              <rect x="100" y="8" width="3" height="5" rx="0.5" fill="var(--color-border-secondary)"/>
+            </g>
+            <g>
+              <rect x="10" y="67" width="3" height="5" rx="0.5" fill="#EF9F27"/>
+              <rect x="16" y="67" width="3" height="5" rx="0.5" fill="#EF9F27"/>
+              <rect x="22" y="67" width="3" height="5" rx="0.5" fill="#EF9F27"/>
+              <rect x="28" y="67" width="3" height="5" rx="0.5" fill="#EF9F27"/>
+              <rect x="34" y="67" width="3" height="5" rx="0.5" fill="#EF9F27"/>
+              <rect x="40" y="67" width="3" height="5" rx="0.5" fill="#E24B4A"/>
+              <rect x="46" y="67" width="3" height="5" rx="0.5" fill="#888780"/>
+              <rect x="52" y="67" width="3" height="5" rx="0.5" fill="#888780"/>
+            </g>
+            <text x="60" y="58" text-anchor="middle" font-size="5" font-weight="500" fill="var(--color-text-primary)" font-family="var(--font-sans)">Arduino UNO R3</text>
+            <circle cx="96" cy="52" r="5" fill="none" stroke="#5DCAA5" stroke-width="0.8"/>
+          </svg>
+          <div class="twin-hint">Drag to rotate</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+            <button style="font-size:10px;padding:5px 6px" onclick="setView('top')"><i class="ti ti-arrow-up" style="font-size:12px" aria-hidden="true"></i> Top</button>
+            <button style="font-size:10px;padding:5px 6px" onclick="setView('side')"><i class="ti ti-arrow-right" style="font-size:12px" aria-hidden="true"></i> Side</button>
+            <button style="font-size:10px;padding:5px 6px" onclick="setView('bot')"><i class="ti ti-arrow-down" style="font-size:12px" aria-hidden="true"></i> Bottom</button>
+            <button style="font-size:10px;padding:5px 6px" onclick="setView('iso')"><i class="ti ti-3d-cube-sphere" style="font-size:12px" aria-hidden="true"></i> Iso</button>
+          </div>
+          <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px;font-size:10px;color:var(--color-text-secondary);line-height:1.6">
+            <div style="font-weight:500;color:var(--color-text-primary);margin-bottom:3px" id="view-label">Front view</div>
+            <div>Size: 68.6 × 53.4 mm</div>
+            <div>Weight: 25 g</div>
+            <div>Voltage: 5V / 3.3V rail</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <div class="ct"><i class="ti ti-radar" aria-hidden="true"></i> Sensor inventory</div>
+    <div id="sensor-list">
+      <div class="sensor-chip">
+        <i class="ti ti-radar chip-icon" style="color:var(--color-text-info)" aria-hidden="true"></i>
+        <div style="flex:1"><div class="chip-name">HC-SR04 ultrasonic</div><div class="chip-pin">Trig → D9 · Echo → D10</div><div class="bar"><div class="bar-fill" id="sv0-bar" style="width:42%;background:var(--color-text-info)"></div></div></div>
+        <div class="chip-val" id="sv0">21 cm</div>
+      </div>
+      <div class="sensor-chip">
+        <i class="ti ti-temperature chip-icon" style="color:var(--color-text-warning)" aria-hidden="true"></i>
+        <div style="flex:1"><div class="chip-name">DHT22 temp / humidity</div><div class="chip-pin">Data → D4</div><div class="bar"><div class="bar-fill" id="sv1-bar" style="width:68%;background:var(--color-text-warning)"></div></div></div>
+        <div class="chip-val" id="sv1">28.3°C</div>
+      </div>
+      <div class="sensor-chip">
+        <i class="ti ti-gyroscope chip-icon" style="color:var(--color-text-success)" aria-hidden="true"></i>
+        <div style="flex:1"><div class="chip-name">MPU-6050 IMU</div><div class="chip-pin">SDA → A4 · SCL → A5 (I²C)</div><div class="bar"><div class="bar-fill" id="sv2-bar" style="width:55%;background:var(--color-text-success)"></div></div></div>
+        <div class="chip-val" id="sv2">12.4°</div>
+      </div>
+      <div class="sensor-chip">
+        <i class="ti ti-line-dotted chip-icon" style="color:var(--color-text-secondary)" aria-hidden="true"></i>
+        <div style="flex:1"><div class="chip-name">IR line sensor × 5</div><div class="chip-pin">A0 · A1 · A2 · A3 · A4</div><div class="bar"><div class="bar-fill" id="sv3-bar" style="width:30%;background:var(--color-text-secondary)"></div></div></div>
+        <div class="chip-val" id="sv3">LOW</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct"><i class="ti ti-robot" aria-hidden="true"></i> Actuator inventory</div>
+    <div>
+      <div class="sensor-chip">
+        <i class="ti ti-rotate-clockwise chip-icon" style="color:var(--color-text-info)" aria-hidden="true"></i>
+        <div style="flex:1"><div class="chip-name">DC motor × 2 (L298N)</div><div class="chip-pin">ENA → D5 · ENB → D6 (PWM)</div><div class="bar"><div class="bar-fill" id="av0-bar" style="width:60%;background:var(--color-text-info)"></div></div></div>
+        <div class="chip-val" id="av0">+PWM</div>
+      </div>
+      <div class="sensor-chip">
+        <i class="ti ti-arrows-move chip-icon" style="color:var(--color-text-warning)" aria-hidden="true"></i>
+        <div style="flex:1"><div class="chip-name">Servo SG90</div><div class="chip-pin">Signal → D3 (PWM ~50Hz)</div><div class="bar"><div class="bar-fill" id="av1-bar" style="width:50%;background:var(--color-text-warning)"></div></div></div>
+        <div class="chip-val" id="av1">90°</div>
+      </div>
+      <div class="sensor-chip">
+        <i class="ti ti-bulb chip-icon" style="color:var(--color-text-success)" aria-hidden="true"></i>
+        <div style="flex:1"><div class="chip-name">Status LED</div><div class="chip-pin">Anode → D13 (onboard)</div><div class="bar"><div class="bar-fill" id="av2-bar" style="width:100%;background:var(--color-text-success)"></div></div></div>
+        <div class="chip-val" id="av2" style="color:var(--color-text-success)">ON</div>
+      </div>
+      <div style="margin-top:8px;padding:8px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md)">
+        <div style="font-size:11px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px">Pin allocation</div>
+        <div class="prog-ring">
+          <span style="font-size:10px;color:var(--color-text-secondary)">Used</span>
+          <div class="prog-bar-wrap"><div class="prog-bar-fill" id="pin-prog" style="width:55%"></div></div>
+          <span style="font-size:11px;font-weight:500;color:var(--color-text-primary)" id="pin-pct">11 / 20</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ct"><i class="ti ti-terminal" aria-hidden="true"></i> Detection log
+    <span style="margin-left:auto;font-size:10px;font-weight:400;color:var(--color-text-tertiary)" id="log-time">00:00:00</span>
+  </div>
+  <div class="log-box" id="log-box"></div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+    <div style="flex:1">
+      <div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:3px">Identification confidence</div>
+      <div class="prog-ring">
+        <div class="prog-bar-wrap"><div class="prog-bar-fill" id="conf-bar" style="width:94%"></div></div>
+        <span style="font-size:12px;font-weight:500;color:var(--color-text-success);min-width:32px" id="conf-val">94%</span>
+      </div>
+    </div>
+    <span class="badge b-ok"><i class="ti ti-check" style="font-size:11px;margin-right:2px" aria-hidden="true"></i>Board verified</span>
+  </div>
+</div>
+
+<div class="btnrow">
+  <button onclick="rescan()"><i class="ti ti-refresh" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> Re-scan</button>
+  <button onclick="sendPrompt('Board identification complete — proceed to Layer 1 AR guided assembly with ghost-line wiring overlay')">Proceed to AR assembly <i class="ti ti-arrow-right" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> ↗</button>
+</div>
+
+</div>
+
+<script>
+var detected=true;
+var PINS=[
+  {id:'D0',type:'dio',lbl:'D0/RX'},{id:'D1',type:'dio',lbl:'D1/TX'},{id:'D2',type:'dio',lbl:'D2'},
+  {id:'D3',type:'pwm',lbl:'D3~'},{id:'D4',type:'dio',lbl:'D4'},{id:'D5',type:'pwm',lbl:'D5~'},
+  {id:'D6',type:'pwm',lbl:'D6~'},{id:'D7',type:'dio',lbl:'D7'},{id:'D8',type:'dio',lbl:'D8'},
+  {id:'D9',type:'pwm',lbl:'D9~'},{id:'D10',type:'pwm',lbl:'D10~'},{id:'D11',type:'pwm',lbl:'D11~'},
+  {id:'D12',type:'dio',lbl:'D12'},{id:'D13',type:'dio',lbl:'D13'},{id:'A0',type:'ana',lbl:'A0'},
+  {id:'A1',type:'ana',lbl:'A1'},{id:'A2',type:'ana',lbl:'A2'},{id:'A3',type:'ana',lbl:'A3'},
+  {id:'5V',type:'pwr',lbl:'5V'},{id:'GND',type:'gnd',lbl:'GND'},{id:'3V3',type:'pwr',lbl:'3.3V'},
+];
+var USED=['D3','D4','D5','D6','D9','D10','A0','A1','A2','A3','A4'];
+
+function buildPinout(){
+  var g=document.getElementById('pinout-grid');g.innerHTML='';
+  PINS.forEach(function(p){
+    var cls='pin-num '+p.type+(USED.includes(p.id)?' used':'');
+    var d=document.createElement('div');d.className='pin';
+    d.innerHTML='<div class="'+cls+'" title="'+p.id+' — click to inspect" onclick="pinClick(\''+p.id+'\')">'+p.id.replace(/[A-Za-z]/g,'').slice(0,2)||p.id.slice(0,2)+'</div><div class="pin-lbl">'+p.lbl+'</div>';
+    g.appendChild(d);
+  });
+}
+
+function pinClick(id){
+  var map={'D3':'Servo SG90 signal','D4':'DHT22 data','D5':'Motor ENA PWM','D6':'Motor ENB PWM','D9':'HC-SR04 Trig','D10':'HC-SR04 Echo','A0':'IR sensor 1','A1':'IR sensor 2','A2':'IR sensor 3','A3':'IR sensor 4'};
+  var msg=map[id]?id+' → '+map[id]:id+' — available';
+  addLog(msg,'info');
+}
+
+var logLines=[
+  {t:'info',m:'Camera initialised · 720p 30fps'},
+  {t:'info',m:'VLM frame sampler active · 1 frame / 2s'},
+  {t:'ok',m:'Board detected: Arduino UNO R3 (confidence 94%)'},
+  {t:'ok',m:'Spec loaded: ATmega328P · 20 pins · 6 PWM'},
+  {t:'ok',m:'Digital twin rendered · 360° model ready'},
+  {t:'ok',m:'6-DoF tracking locked · board pose stable'},
+  {t:'ok',m:'Sensor inventory: HC-SR04 · DHT22 · MPU-6050 · IR ×5'},
+  {t:'ok',m:'Actuator inventory: DC motor ×2 · SG90 servo · LED D13'},
+  {t:'warn',m:'Pin A4 used by both DHT22 and MPU-6050 — verify I²C address'},
+  {t:'info',m:'11 of 20 pins allocated · 9 available'},
+];
+
+function addLog(msg,type,ts){
+  var box=document.getElementById('log-box');
+  var now=new Date();
+  var ts2=ts||now.toTimeString().slice(0,8);
+  var cls={'ok':'log-ok','info':'log-info','warn':'log-warn'}[type]||'';
+  var prefix={'ok':'✓','info':'→','warn':'⚠'}[type]||'·';
+  var d=document.createElement('div');d.className='log-line';
+  d.innerHTML='<span class="log-ts">'+ts2+'</span><span class="'+cls+'">'+prefix+' '+msg+'</span>';
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+  document.getElementById('log-time').textContent=ts2;
+}
+
+function buildLog(){
+  var base=new Date(); base.setMinutes(base.getMinutes()-1);
+  logLines.forEach(function(l,i){
+    var t=new Date(base.getTime()+i*4000);
+    addLog(l.m,l.t,t.toTimeString().slice(0,8));
+  });
+}
+
+function startDetect(){
+  document.getElementById('cam-label').textContent='Scanning...';
+  document.getElementById('cam-label').className='cam-label';
+  document.getElementById('detect-box').style.display='block';
+  setTimeout(function(){
+    document.getElementById('cam-label').textContent='Board identified';
+    document.getElementById('cam-label').className='cam-label ok';
+    addLog('Re-scan triggered · board confirmed: Arduino UNO R3','ok');
+  },1800);
+}
+
+function showManual(){
+  var m=document.getElementById('manual-entry');
+  m.style.display=m.style.display==='none'?'block':'none';
+}
+
+function loadManual(){
+  var v=document.getElementById('manual-board').value.trim();
+  if(!v)return;
+  document.getElementById('cam-label').textContent=v+' — manual';
+  document.getElementById('cam-label').className='cam-label ok';
+  addLog('Manual entry: '+v+' — spec lookup initiated','info');
+  setTimeout(function(){addLog('Spec loaded for '+v,'ok');},900);
+  document.getElementById('manual-entry').style.display='none';
+}
+
+function setView(v){
+  var labels={top:'Top view',side:'Side view (right)',bot:'Bottom view',iso:'Isometric view',front:'Front view'};
+  document.getElementById('view-label').textContent=labels[v]||v;
+  var svg=document.getElementById('twin-svg');
+  var anims={top:'',side:'animation:rot 8s linear infinite',iso:'animation:rot 12s linear infinite',front:'animation:rot 8s linear infinite'};
+  svg.style.cssText=svg.style.cssText.replace(/animation:[^;]*/,'');
+  if(v!=='bot')svg.style.animation='rot 8s linear infinite';
+  addLog('3D twin: switched to '+labels[v],'info');
+}
+
+function rotateTwin(){addLog('360° twin: manual drag rotation','info');}
+
+function rescan(){
+  document.getElementById('cam-label').textContent='Re-scanning...';
+  document.getElementById('cam-label').className='cam-label';
+  addLog('Re-scan triggered','info');
+  setTimeout(function(){
+    document.getElementById('cam-label').textContent='Board identified';
+    document.getElementById('cam-label').className='cam-label ok';
+    addLog('Board confirmed: Arduino UNO R3 · confidence 97%','ok');
+    document.getElementById('conf-val').textContent='97%';
+    document.getElementById('conf-bar').style.width='97%';
+  },2000);
+}
+
+var SENSORS=[
+  {id:'sv0',bar:'sv0-bar',min:8,max:80,unit:' cm',color:'var(--color-text-info)'},
+  {id:'sv1',bar:'sv1-bar',min:24,max:34,unit:'°C',color:'var(--color-text-warning)',dec:1},
+  {id:'sv2',bar:'sv2-bar',min:0,max:45,unit:'°',color:'var(--color-text-success)',dec:1},
+];
+setInterval(function(){
+  SENSORS.forEach(function(s){
+    var v=s.dec?+(s.min+Math.random()*(s.max-s.min)).toFixed(s.dec):Math.round(s.min+Math.random()*(s.max-s.min));
+    var el=document.getElementById(s.id),bar=document.getElementById(s.bar);
+    if(el)el.textContent=v+s.unit;
+    if(bar)bar.style.width=Math.round((v-s.min)/(s.max-s.min)*100)+'%';
+  });
+  var sv3=Math.random()>0.7?'HIGH':'LOW';
+  var sv3el=document.getElementById('sv3');if(sv3el)sv3el.textContent=sv3;
+  var av0=Math.round(150+Math.random()*105);
+  var av0el=document.getElementById('av0');if(av0el)av0el.textContent='+'+av0;
+  var av0bar=document.getElementById('av0-bar');if(av0bar)av0bar.style.width=Math.round(av0/255*100)+'%';
+  var av1=Math.round(60+Math.random()*60);
+  var av1el=document.getElementById('av1');if(av1el)av1el.textContent=av1+'°';
+  var av1bar=document.getElementById('av1-bar');if(av1bar)av1bar.style.width=Math.round(av1/180*100)+'%';
+},2400);
+
+buildPinout();
+buildLog();
+document.getElementById('detect-box').style.display='block';
+document.getElementById('cam-label').textContent='Board identified';
+document.getElementById('cam-label').className='cam-label ok';
+</script>

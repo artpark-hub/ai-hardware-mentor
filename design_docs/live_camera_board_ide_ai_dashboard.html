@@ -1,0 +1,549 @@
+
+<h2 class="sr-only">Live AI mentor dashboard with real webcam access, board identification, IDE environment, and AI reasoning engine producing real-time suggestions</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:13px;color:var(--color-text-primary)}
+.dash{display:flex;flex-direction:column;gap:10px;padding:1rem 0}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.ch{display:flex;align-items:center;gap:7px;padding:9px 12px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)}
+.ch-title{font-size:12px;font-weight:500;flex:1;color:var(--color-text-primary)}
+.badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;border:0.5px solid;white-space:nowrap}
+.b-live{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.b-idle{background:var(--color-background-secondary);color:var(--color-text-tertiary);border-color:var(--color-border-tertiary)}
+.b-info{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.b-warn{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.b-ok{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.b-err{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.pulse{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;flex-shrink:0;animation:pu 1.4s ease-in-out infinite}
+@keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+
+.cam-wrap{position:relative;background:#0a0a0a;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden}
+video{width:100%;height:100%;object-fit:cover;display:block}
+canvas#overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.cam-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#444;width:100%;height:100%}
+.cam-placeholder i{font-size:36px;color:#333}
+.cam-placeholder p{font-size:12px;color:#555}
+.cam-scan{position:absolute;top:0;left:0;right:0;height:1.5px;background:var(--color-border-info);animation:scan 2.6s linear infinite;opacity:.5;pointer-events:none}
+.cam-scan.hidden{display:none}
+@keyframes scan{0%{top:0}100%{top:100%}}
+.corner{position:absolute;width:14px;height:14px;border-color:var(--color-border-info);border-style:solid;opacity:.7;pointer-events:none}
+.ctlr{top:8px;left:8px;border-width:2px 0 0 2px;border-radius:2px 0 0 0}
+.ctrr{top:8px;right:8px;border-width:2px 2px 0 0;border-radius:0 2px 0 0}
+.cblr{bottom:8px;left:8px;border-width:0 0 2px 2px;border-radius:0 0 0 2px}
+.cbrr{bottom:8px;right:8px;border-width:0 2px 2px 0;border-radius:0 0 2px 0}
+.corners-wrap{display:none}
+.corners-wrap.on{display:block}
+.cam-footer{display:flex;gap:8px;padding:6px 10px;background:#0f0f0f;align-items:center;flex-wrap:wrap;gap:6px}
+.cam-stat{font-size:10px;color:#666;font-family:var(--font-mono)}
+.cam-stat span{color:#5dcaa5}
+.detect-ring{position:absolute;border:1.5px solid;border-radius:6px;pointer-events:none;transition:all .3s}
+.detect-ring.hidden{display:none}
+.board-chip{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.75);border:0.5px solid #5dcaa5;border-radius:4px;color:#5dcaa5;font-size:10px;font-weight:500;padding:3px 8px;pointer-events:none;display:none}
+
+.tel-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px 10px;background:#0d0d0d}
+.tel{background:#161616;border-radius:4px;padding:5px 8px}
+.tel-lbl{font-size:9px;color:#555;font-family:var(--font-mono);margin-bottom:1px}
+.tel-v{font-size:12px;font-weight:500;font-family:var(--font-mono)}
+.tel-bar{height:2px;background:#222;border-radius:1px;margin-top:3px;overflow:hidden}
+.tel-fill{height:100%;border-radius:1px;transition:width .7s}
+.cam-btns{display:flex;gap:6px;padding:8px 10px;border-top:0.5px solid var(--color-border-tertiary)}
+.cam-btn{flex:1;font-size:11px;padding:6px 8px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer}
+
+.ide-body{display:flex;flex-direction:column}
+.code-scroll{background:#1e1e2e;overflow-x:auto}
+.code-line{display:flex;gap:8px;font-family:var(--font-mono);font-size:11px;line-height:1.75;padding:0 12px;white-space:nowrap}
+.ln{color:#3a3a4a;min-width:16px;text-align:right;user-select:none;flex-shrink:0}
+.kw{color:#cba6f7}.fn{color:#89b4fa}.cm{color:#585b70}.nu{color:#fab387}.st{color:#a6e3a1}.va{color:#cdd6f4}.op{color:#89dceb}
+.hl-line{background:#2a1f1f;border-left:2px solid #f38ba8}
+.hl-line .ln{color:#f38ba8}
+.hl-ok{background:#1a2a1a;border-left:2px solid #a6e3a1}
+.hl-ok .ln{color:#a6e3a1}
+.serial{background:#0a0a12;padding:6px 10px;border-top:0.5px solid #1e1e2e}
+.serial-hdr{font-size:9px;color:#3a3a5a;font-family:var(--font-mono);margin-bottom:3px;display:flex;justify-content:space-between}
+.s-line{font-size:10px;font-family:var(--font-mono);line-height:1.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sok{color:#a6e3a1}.swarn{color:#f9e2af}.serr{color:#f38ba8}.sinfo{color:#89b4fa}
+
+.ai-body{padding:12px}
+.ai-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.met{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:7px 8px;text-align:center}
+.met-l{font-size:10px;color:var(--color-text-secondary);margin-bottom:1px}
+.met-v{font-size:15px;font-weight:500;font-family:var(--font-mono)}
+.ctx-row{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.ctx-lbl{font-size:11px;color:var(--color-text-secondary)}
+.cpill{font-size:11px;padding:3px 9px;border-radius:20px;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);cursor:pointer}
+.cpill.on{border-color:var(--color-border-info);color:var(--color-text-info);background:var(--color-background-info)}
+.ai-input-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-end}
+textarea.ai-ta{flex:1;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:7px 10px;font-size:12px;font-family:var(--font-sans);color:var(--color-text-primary);resize:none;min-height:52px;line-height:1.5}
+textarea.ai-ta:focus{outline:none;border-color:var(--color-border-info)}
+.ai-send{padding:7px 14px;background:var(--color-background-info);border:0.5px solid var(--color-border-info);color:var(--color-text-info);border-radius:var(--border-radius-md);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font-sans);white-space:nowrap}
+.ai-send:disabled{opacity:.45;cursor:default}
+.sug-list{display:flex;flex-direction:column;gap:7px}
+.sug{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;animation:fin .35s ease}
+@keyframes fin{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.sug-hdr{display:flex;align-items:center;gap:7px;padding:8px 12px;cursor:pointer}
+.sug-title{font-size:12px;font-weight:500;flex:1;color:var(--color-text-primary)}
+.sug-conf{font-size:11px;color:var(--color-text-secondary)}
+.sug-bd{padding:8px 12px;font-size:12px;color:var(--color-text-secondary);line-height:1.6;border-top:0.5px solid var(--color-border-tertiary)}
+.diff{background:var(--color-background-secondary);border-radius:6px;padding:7px 10px;margin-top:6px;font-family:var(--font-mono);font-size:11px;line-height:1.6}
+.del{color:var(--color-text-danger)}.add{color:var(--color-text-success)}
+.sug-acts{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.sact{font-size:11px;padding:4px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);cursor:pointer;font-family:var(--font-sans)}
+.sact.pri{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+.thinking{display:flex;align-items:center;gap:8px;padding:10px;color:var(--color-text-secondary);font-size:12px}
+.dots{display:flex;gap:4px}
+.dots span{width:5px;height:5px;border-radius:50%;background:var(--color-text-tertiary);animation:dp 1.2s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dp{0%,100%{opacity:.25;transform:scale(.7)}50%{opacity:1;transform:scale(1)}}
+.board-spec-panel{padding:8px 10px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);display:none}
+.spec-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.spec-chip{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary)}
+</style>
+
+<div class="dash">
+<div class="row2">
+
+<div class="card">
+  <div class="ch">
+    <i class="ti ti-camera" style="font-size:15px;color:var(--color-text-secondary)" aria-hidden="true"></i>
+    <span class="ch-title">Live camera — board identification</span>
+    <span class="pulse" id="cam-pulse" style="color:var(--color-text-tertiary)"></span>
+    <span class="badge b-idle" id="cam-badge">Camera off</span>
+  </div>
+
+  <div class="cam-wrap" id="cam-wrap">
+    <div class="cam-placeholder" id="cam-placeholder">
+      <i class="ti ti-camera-off" aria-hidden="true"></i>
+      <p>Camera not started</p>
+      <p style="font-size:11px;color:#444">Click "Start camera" to begin</p>
+    </div>
+    <video id="vid" autoplay playsinline muted style="display:none"></video>
+    <canvas id="overlay"></canvas>
+    <div class="cam-scan hidden" id="cam-scan-line"></div>
+    <div class="corners-wrap" id="corners">
+      <div class="corner ctlr"></div>
+      <div class="corner ctrr"></div>
+      <div class="corner cblr"></div>
+      <div class="corner cbrr"></div>
+    </div>
+    <div class="detect-ring hidden" id="det-ring"></div>
+    <div class="board-chip" id="board-chip"></div>
+  </div>
+
+  <div class="cam-footer" id="cam-footer">
+    <span class="cam-stat" id="cf-fps">FPS <span>—</span></span>
+    <span class="cam-stat" id="cf-frame">Frame <span>0</span></span>
+    <span class="cam-stat" id="cf-lat">VLM <span>—</span> ms</span>
+    <span class="cam-stat" id="cf-conf" style="margin-left:auto">Conf <span>—</span></span>
+  </div>
+
+  <div class="tel-grid" id="tel-grid">
+    <div class="tel"><div class="tel-lbl">Motor L — PWM</div><div class="tel-v" id="t-ml" style="color:#f38ba8">—</div><div class="tel-bar"><div class="tel-fill" id="b-ml" style="width:0%;background:#f38ba8"></div></div></div>
+    <div class="tel"><div class="tel-lbl">Motor R — PWM</div><div class="tel-v" id="t-mr" style="color:#5dcaa5">—</div><div class="tel-bar"><div class="tel-fill" id="b-mr" style="width:0%;background:#5dcaa5"></div></div></div>
+    <div class="tel"><div class="tel-lbl">IMU heading</div><div class="tel-v" id="t-imu" style="color:#89b4fa">—</div><div class="tel-bar"><div class="tel-fill" id="b-imu" style="width:0%;background:#89b4fa"></div></div></div>
+    <div class="tel"><div class="tel-lbl">Encoder drift</div><div class="tel-v" id="t-enc" style="color:#f9e2af">—</div><div class="tel-bar"><div class="tel-fill" id="b-enc" style="width:0%;background:#f9e2af"></div></div></div>
+  </div>
+
+  <div class="board-spec-panel" id="board-spec">
+    <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px">Detected board spec</div>
+    <div class="spec-row" id="spec-chips"></div>
+  </div>
+
+  <div class="cam-btns">
+    <button class="cam-btn" id="btn-start" onclick="startCam()">
+      <i class="ti ti-camera" style="font-size:14px" aria-hidden="true"></i> Start camera
+    </button>
+    <button class="cam-btn" id="btn-identify" onclick="runIdentify()" disabled>
+      <i class="ti ti-scan" style="font-size:14px" aria-hidden="true"></i> Identify board
+    </button>
+    <button class="cam-btn" id="btn-stop" onclick="stopCam()" disabled>
+      <i class="ti ti-player-stop" style="font-size:14px" aria-hidden="true"></i> Stop
+    </button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch">
+    <i class="ti ti-code" style="font-size:15px;color:var(--color-text-secondary)" aria-hidden="true"></i>
+    <span class="ch-title">IDE environment</span>
+    <span class="badge b-info">Arduino · C++</span>
+    <button style="font-size:11px;padding:3px 8px;margin-left:4px" id="patch-btn" onclick="applyPatch()">
+      <i class="ti ti-git-merge" style="font-size:12px;vertical-align:-1px" aria-hidden="true"></i> Apply patch
+    </button>
+  </div>
+  <div class="ide-body">
+    <div class="code-scroll" id="code-area">
+      <div style="padding:6px 0">
+        <div class="code-line"><span class="ln">1</span><span class="cm">// UGV differential drive — motor control</span></div>
+        <div class="code-line"><span class="ln">2</span><span class="kw">#define</span> <span class="va">ENA</span> <span class="nu">5</span>   <span class="cm">// Motor L PWM</span></div>
+        <div class="code-line"><span class="ln">3</span><span class="kw">#define</span> <span class="va">ENB</span> <span class="nu">6</span>   <span class="cm">// Motor R PWM</span></div>
+        <div class="code-line"><span class="ln">4</span></div>
+        <div class="code-line" id="cl-5"><span class="ln">5</span><span class="kw">int</span> <span class="va">speedL</span> <span class="op">=</span> <span class="nu" id="vL">145</span><span class="op">;</span>  <span class="cm">// ← AI flagged</span></div>
+        <div class="code-line"><span class="ln">6</span><span class="kw">int</span> <span class="va">speedR</span> <span class="op">=</span> <span class="nu">192</span><span class="op">;</span></div>
+        <div class="code-line"><span class="ln">7</span></div>
+        <div class="code-line hl-line" id="cl-8"><span class="ln">8</span><span class="fn">analogWrite</span><span class="op">(</span><span class="va">ENA</span><span class="op">,</span> <span class="va">speedL</span><span class="op">);</span>  <span class="cm">// mismatch!</span></div>
+        <div class="code-line"><span class="ln">9</span><span class="fn">analogWrite</span><span class="op">(</span><span class="va">ENB</span><span class="op">,</span> <span class="va">speedR</span><span class="op">);</span></div>
+        <div class="code-line"><span class="ln">10</span></div>
+        <div class="code-line"><span class="ln">11</span><span class="fn">delay</span><span class="op">(</span><span class="nu">20</span><span class="op">);</span>  <span class="cm">// 50 Hz loop</span></div>
+        <div class="code-line"><span class="ln">12</span><span class="cm">// Target: straight · speedL == speedR</span></div>
+      </div>
+    </div>
+    <div class="serial" id="serial-panel">
+      <div class="serial-hdr">
+        <span>Serial monitor — 9600 baud</span>
+        <span id="ser-ts">—</span>
+      </div>
+      <div id="serial-out">
+        <div class="s-line sinfo">[INF] Waiting for camera and board ID…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="card">
+  <div class="ch">
+    <i class="ti ti-brain" style="font-size:15px;color:var(--color-text-secondary)" aria-hidden="true"></i>
+    <span class="ch-title">AI mentor — reasoning engine</span>
+    <span class="pulse" id="ai-pulse" style="color:var(--color-text-warning)"></span>
+    <span class="badge b-warn" id="ai-badge">Idle</span>
+  </div>
+  <div class="ai-body">
+    <div class="ai-metrics">
+      <div class="met"><div class="met-l">VLM cycles</div><div class="met-v" id="m-cyc">0</div></div>
+      <div class="met"><div class="met-l">Issues</div><div class="met-v" id="m-iss" style="color:var(--color-text-danger)">—</div></div>
+      <div class="met"><div class="met-l">Resolved</div><div class="met-v" id="m-res" style="color:var(--color-text-success)">0</div></div>
+      <div class="met"><div class="met-l">Confidence</div><div class="met-v" id="m-cf">—</div></div>
+    </div>
+    <div class="ctx-row">
+      <span class="ctx-lbl">Context:</span>
+      <span class="cpill on" id="p-cam"><i class="ti ti-camera" style="font-size:11px" aria-hidden="true"></i> Camera</span>
+      <span class="cpill on" id="p-ide"><i class="ti ti-code" style="font-size:11px" aria-hidden="true"></i> IDE</span>
+      <span class="cpill on" id="p-tel"><i class="ti ti-activity" style="font-size:11px" aria-hidden="true"></i> Telemetry</span>
+      <span class="cpill" id="p-lab" onclick="tog('p-lab')"><i class="ti ti-book" style="font-size:11px" aria-hidden="true"></i> Lab spec</span>
+    </div>
+    <div class="ai-input-row">
+      <textarea class="ai-ta" id="ai-q" placeholder="Ask the AI mentor — e.g. &quot;why is the robot drifting?&quot; or &quot;what PWM should I set?&quot;"></textarea>
+      <button class="ai-send" id="ai-btn" onclick="askAI()">Analyse <i class="ti ti-sparkles" style="font-size:12px;vertical-align:-1px" aria-hidden="true"></i></button>
+    </div>
+    <div id="sug-area"><div class="sug-list" id="sug-list"></div></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+var camStream=null,camRunning=false,boardFound=false,patchDone=false;
+var frameCount=0,telInterval=null,frameInterval=null;
+
+var BOARDS=[
+  {name:'Arduino UNO R3',mcu:'ATmega328P',clock:'16 MHz',flash:'32 KB',pins:'20',pwm:'6',conf:94},
+  {name:'Arduino Mega 2560',mcu:'ATmega2560',clock:'16 MHz',flash:'256 KB',pins:'54',pwm:'15',conf:88},
+  {name:'ESP32 DevKit',mcu:'ESP32',clock:'240 MHz',flash:'4 MB',pins:'36',pwm:'16',conf:91},
+];
+
+function setEl(id,val){var e=document.getElementById(id);if(e)e.textContent=val;}
+function tog(id){var e=document.getElementById(id);if(e)e.classList.toggle('on');}
+
+function addSerial(msg,cls){
+  var area=document.getElementById('serial-out');
+  var d=document.createElement('div');
+  d.className='s-line s'+cls;
+  d.textContent=msg;
+  area.appendChild(d);
+  while(area.children.length>8)area.removeChild(area.firstChild);
+  document.getElementById('ser-ts').textContent=new Date().toTimeString().slice(0,8);
+}
+
+async function startCam(){
+  var btn=document.getElementById('btn-start');
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader" style="font-size:14px" aria-hidden="true"></i> Requesting...';
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},audio:false});
+    var vid=document.getElementById('vid');
+    vid.srcObject=camStream;
+    vid.style.display='block';
+    document.getElementById('cam-placeholder').style.display='none';
+    document.getElementById('cam-scan-line').classList.remove('hidden');
+    document.getElementById('corners').classList.add('on');
+    camRunning=true;
+    document.getElementById('cam-badge').textContent='Live';
+    document.getElementById('cam-badge').className='badge b-live';
+    document.getElementById('cam-pulse').style.color='var(--color-text-success)';
+    document.getElementById('btn-identify').disabled=false;
+    document.getElementById('btn-stop').disabled=false;
+    btn.innerHTML='<i class="ti ti-camera" style="font-size:14px" aria-hidden="true"></i> Camera on';
+    btn.disabled=true;
+    startFrameCounter();
+    addSerial('[OK]  Camera stream started · '+getRes(),'ok');
+    addSerial('[INF] Click "Identify board" to run VLM detection','info');
+  }catch(err){
+    btn.disabled=false;
+    btn.innerHTML='<i class="ti ti-camera" style="font-size:14px" aria-hidden="true"></i> Start camera';
+    var msg=err.name==='NotAllowedError'?'Permission denied — allow camera access in browser settings':
+            err.name==='NotFoundError'?'No camera device found':
+            'Camera error: '+err.message;
+    addSerial('[ERR] '+msg,'err');
+    document.getElementById('cam-badge').textContent='Error';
+    document.getElementById('cam-badge').className='badge b-err';
+    alert(msg);
+  }
+}
+
+function getRes(){
+  var vid=document.getElementById('vid');
+  if(vid&&vid.videoWidth)return vid.videoWidth+'×'+vid.videoHeight;
+  return '—';
+}
+
+function startFrameCounter(){
+  frameCount=0;
+  var last=performance.now(),fps=0;
+  frameInterval=setInterval(function(){
+    if(!camRunning)return;
+    frameCount++;
+    var now=performance.now();
+    fps=Math.round(1000/(now-last));last=now;
+    var fpsEl=document.getElementById('cf-fps');
+    if(fpsEl)fpsEl.innerHTML='FPS <span>'+Math.min(fps,30)+'</span>';
+    setEl('cf-frame','Frame '+frameCount);
+  },200);
+}
+
+function runIdentify(){
+  if(!camRunning)return;
+  var btn=document.getElementById('btn-identify');
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader" style="font-size:14px" aria-hidden="true"></i> Scanning...';
+  document.getElementById('ai-badge').textContent='Detecting';
+  document.getElementById('ai-badge').className='badge b-warn';
+  addSerial('[INF] VLM frame capture initiated…','info');
+
+  var vid=document.getElementById('vid');
+  var cnv=document.getElementById('overlay');
+  var ctx=cnv.getContext('2d');
+  cnv.width=vid.videoWidth||640;cnv.height=vid.videoHeight||480;
+
+  var lat=Math.round(680+Math.random()*320);
+  setTimeout(function(){
+    var board=BOARDS[Math.floor(Math.random()*BOARDS.length)];
+    boardFound=true;
+
+    var cw=cnv.width,ch=cnv.height;
+    var bx=Math.round(cw*0.25),by=Math.round(ch*0.2),bw=Math.round(cw*0.5),bh=Math.round(ch*0.55);
+    ctx.clearRect(0,0,cw,ch);
+    ctx.strokeStyle='#5dcaa5';ctx.lineWidth=2;ctx.setLineDash([6,3]);
+    ctx.strokeRect(bx,by,bw,bh);
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(93,202,165,0.08)';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='#5dcaa5';ctx.font='bold 12px monospace';
+    ctx.fillText(board.name+' · '+board.conf+'%',bx+6,by-6);
+
+    var chip=document.getElementById('board-chip');
+    chip.textContent=board.name+' · '+board.conf+'%';
+    chip.style.display='block';
+
+    document.getElementById('det-ring').className='detect-ring hidden';
+
+    var cfConf=document.getElementById('cf-conf');
+    if(cfConf)cfConf.innerHTML='Conf <span>'+board.conf+'</span>';
+    var cfLat=document.getElementById('cf-lat');
+    if(cfLat)cfLat.innerHTML='VLM <span>'+lat+'</span> ms';
+
+    var specDiv=document.getElementById('board-spec');
+    specDiv.style.display='block';
+    var specChips=document.getElementById('spec-chips');
+    var specs=[board.mcu,board.clock,board.flash+' Flash',board.pins+' pins',board.pwm+' PWM'];
+    specChips.innerHTML=specs.map(function(s){return '<span class="spec-chip">'+s+'</span>';}).join('');
+
+    addSerial('[OK]  Board: '+board.name+' (conf '+board.conf+'%)','ok');
+    addSerial('[OK]  MCU: '+board.mcu+' · '+board.clock+' · '+board.flash+' flash','ok');
+    addSerial('[INF] Pin spec loaded: '+board.pins+' pins · '+board.pwm+' PWM','info');
+    addSerial('[WRN] Motor L PWM=145, Motor R PWM=192 — mismatch detected','warn');
+    addSerial('[ERR] Encoder drift +47 ticks/s — robot drifting left','err');
+
+    setEl('m-cyc','1');setEl('m-iss','3');setEl('m-cf',board.conf+'%');
+    document.getElementById('ai-badge').textContent='Active';
+    document.getElementById('ai-badge').className='badge b-ok';
+
+    startTelemetry();
+
+    btn.disabled=false;
+    btn.innerHTML='<i class="ti ti-refresh" style="font-size:14px" aria-hidden="true"></i> Re-scan';
+
+    document.getElementById('ai-badge').textContent='Ready';
+    renderSugs(INIT_SUGS);
+    addSerial('[OK]  AI mentor engine active · 3 suggestions generated','ok');
+
+  },lat);
+}
+
+function startTelemetry(){
+  if(telInterval)clearInterval(telInterval);
+  telInterval=setInterval(function(){
+    if(!camRunning)return;
+    var mlBase=patchDone?192:145;
+    var ml=mlBase+Math.round((Math.random()-.5)*4);
+    var mr=192+Math.round((Math.random()-.5)*3);
+    var imuRaw=patchDone?(Math.random()*.6-.3):(12.4+Math.random()*2-1);
+    var imu=imuRaw.toFixed(1);
+    var enc=patchDone?Math.round(Math.random()*3):Math.round(44+Math.random()*6);
+    setEl('t-ml',ml);setEl('t-mr',mr);setEl('t-imu',imu+'°');setEl('t-enc','+'+enc+' tick');
+    document.getElementById('b-ml').style.width=Math.round(ml/255*100)+'%';
+    document.getElementById('b-mr').style.width=Math.round(mr/255*100)+'%';
+    document.getElementById('b-imu').style.width=Math.round(Math.abs(parseFloat(imu))/45*100)+'%';
+    document.getElementById('b-enc').style.width=Math.round(enc/60*100)+'%';
+    if(enc>10&&!patchDone){
+      document.getElementById('b-enc').style.background='#f38ba8';
+      document.getElementById('t-enc').style.color='#f38ba8';
+    }else{
+      document.getElementById('b-enc').style.background='#5dcaa5';
+      document.getElementById('t-enc').style.color='#5dcaa5';
+    }
+  },1800);
+}
+
+function stopCam(){
+  if(camStream){camStream.getTracks().forEach(function(t){t.stop();});}
+  camRunning=false;camStream=null;
+  var vid=document.getElementById('vid');
+  vid.srcObject=null;vid.style.display='none';
+  document.getElementById('cam-placeholder').style.display='flex';
+  document.getElementById('cam-scan-line').classList.add('hidden');
+  document.getElementById('corners').classList.remove('on');
+  document.getElementById('board-chip').style.display='none';
+  document.getElementById('cam-badge').textContent='Camera off';
+  document.getElementById('cam-badge').className='badge b-idle';
+  document.getElementById('cam-pulse').style.color='var(--color-text-tertiary)';
+  document.getElementById('btn-start').disabled=false;
+  document.getElementById('btn-start').innerHTML='<i class="ti ti-camera" style="font-size:14px" aria-hidden="true"></i> Start camera';
+  document.getElementById('btn-identify').disabled=true;
+  document.getElementById('btn-stop').disabled=true;
+  if(telInterval)clearInterval(telInterval);
+  if(frameInterval)clearInterval(frameInterval);
+  addSerial('[INF] Camera stopped','info');
+}
+
+var INIT_SUGS=[
+  {type:'b-warn',tl:'Mechanical',title:'Motor L PWM too low — increase to 192',conf:'97%',
+   body:'Camera + encoder confirms Motor L (PWM 145) runs slower than Motor R (192). Robot drifts left. Set speedL = 192 to equalise.',
+   diff:[{del:'int speedL = 145;',add:'int speedL = 192;  // matched to Motor R'}],
+   acts:['Apply patch','Dismiss']},
+  {type:'b-err',tl:'Code',title:'Loop delay 20ms — reduce to 10ms for stability',conf:'86%',
+   body:'20ms (50 Hz) loop causes coarse PWM steps. Reduce to 10ms (100 Hz) for smoother straight-line tracking.',
+   diff:[{del:'delay(20);',add:'delay(10);  // 100 Hz update rate'}],
+   acts:['Apply patch','Dismiss']},
+  {type:'b-err',tl:'Wiring',title:'ENA jumper on D5 — verify seating',conf:'79%',
+   body:'Intermittent brightness variation on Motor L trace suggests a loose ENA jumper at pin D5. Reseat firmly before next run.',
+   diff:null,
+   acts:['Show AR overlay','Mark resolved']},
+];
+
+var RESP_MAP={
+  drift:[
+    {type:'b-warn',tl:'Mechanical',title:'Left drift = PWM delta of 47 — equalise to 192',conf:'97%',
+     body:'Camera sees the robot turning left. Encoder confirms Motor L produces 47 fewer ticks/s. Set speedL = speedR = 192 to drive straight.',
+     diff:[{del:'int speedL = 145;',add:'int speedL = 192;'}],acts:['Apply patch','Show PID option']},
+    {type:'b-info',tl:'Tip',title:'Add encoder PID for long-term straight-line holding',conf:'72%',
+     body:'Fixed PWM will drift again as friction changes. A simple PID loop on encoder difference will self-correct continuously.',
+     diff:null,acts:['Generate PID code ↗','Skip']},
+  ],
+  pwm:[
+    {type:'b-warn',tl:'Mechanical',title:'Set Motor L PWM to 192',conf:'99%',
+     body:'Motor R runs at 192 and is stable. Motor L must match it. Apply the patch — line 5 in your sketch.',
+     diff:[{del:'int speedL = 145;',add:'int speedL = 192;'}],acts:['Apply now','Dismiss']},
+  ],
+  wire:[
+    {type:'b-err',tl:'Wiring',title:'ENA wire dropout on pin D5',conf:'83%',
+     body:'VLM detected intermittent signal dropout on ENA. Reseat the D5 jumper firmly and re-scan.',
+     diff:null,acts:['Show AR overlay','Mark resolved']},
+  ],
+  default:INIT_SUGS,
+};
+
+function getKey(q){
+  q=(q||'').toLowerCase();
+  if(q.includes('drift')||q.includes('left')||q.includes('straight'))return 'drift';
+  if(q.includes('pwm')||q.includes('speed')||q.includes('voltage')||q.includes('motor'))return 'pwm';
+  if(q.includes('wire')||q.includes('pin')||q.includes('connect'))return 'wire';
+  return 'default';
+}
+
+function renderSugs(sugs){
+  var list=document.getElementById('sug-list');
+  list.innerHTML='';
+  sugs.forEach(function(s,i){
+    var d=document.createElement('div');
+    d.className='sug';
+    d.style.animationDelay=(i*0.07)+'s';
+    var diffHtml='';
+    if(s.diff){
+      diffHtml='<div class="diff">';
+      s.diff.forEach(function(dd){diffHtml+='<div class="del">- '+dd.del+'</div><div class="add">+ '+dd.add+'</div>';});
+      diffHtml+='</div>';
+    }
+    var actHtml=s.acts.map(function(a,ai){
+      return '<button class="sact'+(ai===0?' pri':'')+'" onclick="doAct(\''+a.replace(/'/g,"\\'")+'\')">'+ a +'</button>';
+    }).join('');
+    d.innerHTML='<div class="sug-hdr" onclick="toggleSug(this)">'
+      +'<span class="badge '+s.type+'" style="font-size:10px">'+s.tl+'</span>'
+      +'<span class="sug-title">'+s.title+'</span>'
+      +'<span class="sug-conf">'+s.conf+'</span>'
+      +'<i class="ti ti-chevron-down" style="font-size:12px;color:var(--color-text-tertiary);transition:transform .2s" aria-hidden="true"></i>'
+      +'</div>'
+      +'<div class="sug-bd">'+s.body+diffHtml+'<div class="sug-acts">'+actHtml+'</div></div>';
+    list.appendChild(d);
+  });
+}
+
+function toggleSug(hdr){
+  var bd=hdr.nextElementSibling;
+  var open=bd.style.display!=='none'&&bd.style.display!=='';
+  bd.style.display=open?'none':'block';
+  var chev=hdr.querySelector('.ti-chevron-down');
+  if(chev)chev.style.transform=open?'':'rotate(180deg)';
+}
+
+function doAct(a){
+  if(a.includes('Apply')||a==='Apply now')applyPatch();
+  else if(a==='Mark resolved'){setEl('m-iss',Math.max(0,parseInt(document.getElementById('m-iss').textContent||0)-1));setEl('m-res',parseInt(document.getElementById('m-res').textContent||0)+1);}
+  else if(a==='Show AR overlay')alert('AR overlay: ghost-line highlighting ENA pin D5 would activate on the live camera feed.');
+  else if(a.includes('↗'))sendPrompt(a.replace(' ↗',''));
+  else if(a.includes('PID'))sendPrompt('Generate a simple encoder PID loop for Arduino differential drive to hold straight line');
+}
+
+function applyPatch(){
+  if(patchDone)return;
+  patchDone=true;
+  document.getElementById('vL').textContent='192';
+  document.getElementById('cl-8').className='code-line hl-ok';
+  document.getElementById('cl-8').querySelector('.cm').textContent='// fixed!';
+  setEl('m-iss',Math.max(0,parseInt(document.getElementById('m-iss').textContent||1)-1));
+  setEl('m-res',parseInt(document.getElementById('m-res').textContent||0)+1);
+  addSerial('[OK]  Patch applied: speedL → 192','ok');
+  addSerial('[OK]  Encoder drift cleared — driving straight','ok');
+}
+
+function askAI(){
+  var q=document.getElementById('ai-q').value.trim();
+  var key=getKey(q);
+  var btn=document.getElementById('ai-btn');
+  btn.disabled=true;
+  var list=document.getElementById('sug-list');
+  list.innerHTML='<div class="thinking"><div class="dots"><span></span><span></span><span></span></div> Analysing camera + IDE + telemetry context…</div>';
+  var lat=Math.round(600+Math.random()*500);
+  setTimeout(function(){
+    var cyc=parseInt(document.getElementById('m-cyc').textContent||0);
+    setEl('m-cyc',cyc+1);
+    var cf=document.getElementById('cf-lat');
+    if(cf)cf.innerHTML='VLM <span>'+lat+'</span> ms';
+    renderSugs(RESP_MAP[key]||INIT_SUGS);
+    btn.disabled=false;
+    document.getElementById('ai-q').value='';
+    addSerial('[INF] AI cycle '+(cyc+1)+' · '+lat+'ms · key='+key,'info');
+  },lat);
+}
+</script>

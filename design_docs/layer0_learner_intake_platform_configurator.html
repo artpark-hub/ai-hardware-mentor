@@ -1,0 +1,601 @@
+
+<h2 class="sr-only">Layer 0 — Learner intake, component status, platform configurator, bill of materials generator, and handoff to the AR build pipeline</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.w{padding:1.25rem 0}
+.stepbar{display:flex;align-items:center;margin-bottom:1.5rem}
+.sp{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.sd{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--color-text-tertiary);background:var(--color-background-secondary);transition:all .2s;flex-shrink:0}
+.sd.act{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+.sd.don{background:var(--color-background-success);border-color:var(--color-border-success);color:var(--color-text-success)}
+.sl{font-size:10px;color:var(--color-text-tertiary);text-align:center;max-width:60px;line-height:1.3}
+.sl.act{color:var(--color-text-secondary)}
+.sc{flex:1;height:1px;background:var(--color-border-tertiary);margin-bottom:16px;transition:background .2s}
+.sc.don{background:var(--color-border-success)}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.125rem 1.25rem;margin-bottom:.75rem}
+.ct{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:.875rem;display:flex;align-items:center;gap:7px}
+.fl{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
+.fg{display:grid;gap:10px;margin-bottom:10px}
+.fg2{grid-template-columns:1fr 1fr}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.fg1{grid-template-columns:1fr}
+input[type=text],input[type=number],select{width:100%;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:7px 10px;font-size:12px;color:var(--color-text-primary);font-family:var(--font-sans)}
+input:focus,select:focus{outline:none;border-color:var(--color-border-info)}
+.rc{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;cursor:pointer;display:flex;align-items:flex-start;gap:9px;transition:all .15s}
+.rc:hover{border-color:var(--color-border-secondary);background:var(--color-background-secondary)}
+.rc.sel{border-color:var(--color-border-info);background:var(--color-background-info)}
+.rc input[type=radio]{margin-top:2px;flex-shrink:0;accent-color:var(--color-text-info)}
+.rl{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.rs{font-size:11px;color:var(--color-text-secondary);margin-top:2px;line-height:1.4}
+.pc{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:11px 10px;cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:5px}
+.pc:hover{border-color:var(--color-border-secondary);background:var(--color-background-secondary)}
+.pc.sel{border-color:var(--color-border-info);background:var(--color-background-info)}
+.pi{font-size:20px;color:var(--color-text-secondary)}
+.pc.sel .pi{color:var(--color-text-info)}
+.pl{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.ps{font-size:10px;color:var(--color-text-secondary);line-height:1.3}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:10px;cursor:pointer;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);background:var(--color-background-secondary);transition:all .15s;margin:2px}
+.pill.on{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+.divr{height:0.5px;background:var(--color-border-tertiary);margin:.875rem 0}
+.btnrow{display:flex;justify-content:flex-end;gap:8px;margin-top:1rem}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font-sans);transition:all .15s}
+.btn:hover{border-color:var(--color-border-primary);background:var(--color-background-primary)}
+.btn.pri{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+.btn.suc{background:var(--color-background-success);border-color:var(--color-border-success);color:var(--color-text-success)}
+.scr{display:none}.scr.on{display:block}
+.sub{display:none}.sub.on{display:block}
+.inf{background:var(--color-background-info);border:0.5px solid var(--color-border-info);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-info);margin-top:10px}
+.suc-box{background:var(--color-background-success);border:0.5px solid var(--color-border-success);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-success)}
+.warn{background:var(--color-background-warning);border:0.5px solid var(--color-border-warning);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-warning)}
+.bom-tbl{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;table-layout:fixed}
+.bom-tbl th{text-align:left;padding:6px 8px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-weight:500;border-bottom:0.5px solid var(--color-border-tertiary)}
+.bom-tbl td{padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:top;word-break:break-word}
+.bom-tbl tr:last-child td{border-bottom:none}
+.bom-tbl th:nth-child(1),.bom-tbl td:nth-child(1){width:34%}
+.bom-tbl th:nth-child(2),.bom-tbl td:nth-child(2){width:8%;text-align:center}
+.bom-tbl th:nth-child(3),.bom-tbl td:nth-child(3){width:14%;text-align:right}
+.bom-tbl th:nth-child(4),.bom-tbl td:nth-child(4){width:44%;color:var(--color-text-secondary)}
+.totrow{display:flex;justify-content:space-between;align-items:center;padding:9px 8px 0;border-top:0.5px solid var(--color-border-secondary);margin-top:4px}
+.appbadge{display:inline-block;padding:1px 6px;border-radius:20px;font-size:10px;background:var(--color-background-success);color:var(--color-text-success);border:0.5px solid var(--color-border-success);margin-top:2px}
+.pline{display:flex;align-items:center;gap:10px;padding:9px 12px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px}
+.pline-lbl{font-size:12px;font-weight:500;color:var(--color-text-primary);flex:1}
+.pline-sub{font-size:11px;color:var(--color-text-secondary)}
+.badge-next{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--color-background-info);color:var(--color-text-info);white-space:nowrap}
+.badge-pend{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-tertiary);white-space:nowrap}
+.pulse{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;animation:pu 1.5s ease-in-out infinite;flex-shrink:0}
+@keyframes pu{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.combo-note{font-size:11px;color:var(--color-text-secondary);font-style:italic;margin-top:6px}
+.min-price-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;background:var(--color-background-warning);border:0.5px solid var(--color-border-warning);color:var(--color-text-warning);font-size:11px;margin-top:6px}
+</style>
+
+<div class="w">
+
+<div class="stepbar" id="sbar">
+  <div class="sp"><div class="sd act" id="d0">1</div><div class="sl act">Profile</div></div>
+  <div class="sc" id="c0"></div>
+  <div class="sp"><div class="sd" id="d1">2</div><div class="sl">Components</div></div>
+  <div class="sc" id="c1"></div>
+  <div class="sp"><div class="sd" id="d2">3</div><div class="sl">Platform</div></div>
+  <div class="sc" id="c2"></div>
+  <div class="sp"><div class="sd" id="d3">4</div><div class="sl">BOM</div></div>
+  <div class="sc" id="c3"></div>
+  <div class="sp"><div class="sd" id="d4">5</div><div class="sl">Build</div></div>
+</div>
+
+<!-- ═══ STEP 0: PROFILE ═══ -->
+<div class="scr on" id="s0">
+  <div class="card">
+    <div class="ct"><i class="ti ti-user-circle" style="font-size:16px" aria-hidden="true"></i> Learner profile</div>
+    <div class="fg fg2">
+      <div><div class="fl">Full name</div><input type="text" id="p-name" placeholder="e.g. Arjun Sharma"></div>
+      <div><div class="fl">Age</div><input type="number" id="p-age" placeholder="e.g. 21" min="10" max="80"></div>
+    </div>
+    <div class="fg fg2">
+      <div><div class="fl">Institution / organisation</div><input type="text" id="p-inst" placeholder="e.g. BITS Pilani"></div>
+      <div><div class="fl">Course / role</div><input type="text" id="p-role" placeholder="e.g. B.E. Mechanical"></div>
+    </div>
+    <div class="fg fg2">
+      <div><div class="fl">Experience level</div>
+        <select id="p-exp">
+          <option value="">Select level</option>
+          <option value="beginner">Beginner — first time with hardware</option>
+          <option value="intermediate">Intermediate — built circuits before</option>
+          <option value="advanced">Advanced — familiar with MCUs and robotics</option>
+        </select>
+      </div>
+      <div><div class="fl">Preferred language</div>
+        <select id="p-lang">
+          <option value="english">English</option>
+          <option value="hindi">Hindi</option>
+          <option value="tamil">Tamil</option>
+          <option value="telugu">Telugu</option>
+        </select>
+      </div>
+    </div>
+    <div class="divr"></div>
+    <div class="fl" style="margin-bottom:7px">Learning objectives</div>
+    <div id="obj-pills">
+      <span class="pill" onclick="tpill(this)"><i class="ti ti-cpu" style="font-size:11px" aria-hidden="true"></i> Embedded systems</span>
+      <span class="pill" onclick="tpill(this)"><i class="ti ti-robot" style="font-size:11px" aria-hidden="true"></i> Robotics</span>
+      <span class="pill" onclick="tpill(this)"><i class="ti ti-circuit-diode" style="font-size:11px" aria-hidden="true"></i> Electronics</span>
+      <span class="pill" onclick="tpill(this)"><i class="ti ti-code" style="font-size:11px" aria-hidden="true"></i> Programming</span>
+      <span class="pill" onclick="tpill(this)"><i class="ti ti-drone" style="font-size:11px" aria-hidden="true"></i> UAV / Drones</span>
+      <span class="pill" onclick="tpill(this)"><i class="ti ti-car" style="font-size:11px" aria-hidden="true"></i> UGV</span>
+      <span class="pill" onclick="tpill(this)"><i class="ti ti-hand-grab" style="font-size:11px" aria-hidden="true"></i> Manipulators</span>
+      <span class="pill" onclick="tpill(this)"><i class="ti ti-brain" style="font-size:11px" aria-hidden="true"></i> AI on hardware</span>
+    </div>
+  </div>
+  <div class="btnrow"><button class="btn pri" onclick="go(1)">Continue <i class="ti ti-arrow-right" aria-hidden="true"></i></button></div>
+</div>
+
+<!-- ═══ STEP 1: COMPONENT STATUS ═══ -->
+<div class="scr" id="s1">
+  <div class="card">
+    <div class="ct"><i class="ti ti-package" style="font-size:16px" aria-hidden="true"></i> Component status</div>
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px">Have you already purchased the components for your build?</div>
+    <div class="fg fg2">
+      <label class="rc" id="rc-have" onclick="selcomp('have')">
+        <input type="radio" name="comp" value="have">
+        <div><div class="rl"><i class="ti ti-check" style="font-size:12px;color:var(--color-text-success)" aria-hidden="true"></i> Already purchased</div>
+        <div class="rs">I have my components — camera will auto-detect and log them into the system.</div></div>
+      </label>
+      <label class="rc" id="rc-yet" onclick="selcomp('yet')">
+        <input type="radio" name="comp" value="yet">
+        <div><div class="rl"><i class="ti ti-shopping-cart" style="font-size:12px;color:var(--color-text-info)" aria-hidden="true"></i> Yet to purchase</div>
+        <div class="rs">Help me choose a platform, build a BOM, and estimate cost before I buy.</div></div>
+      </label>
+    </div>
+    <div class="sub" id="sub-have">
+      <div class="suc-box" style="margin-top:10px"><i class="ti ti-camera" style="font-size:13px;vertical-align:-2px" aria-hidden="true"></i> <strong>Camera detection ready</strong> — show your control board on the next screen. The platform auto-identifies the board, loads its pinout spec, and inventories all connected sensors and actuators.</div>
+      <div style="margin-top:10px"><div class="fl">Or enter board name manually (optional)</div><input type="text" id="p-board" placeholder="e.g. Arduino UNO, ESP32, STM32 Nucleo"></div>
+    </div>
+    <div class="sub" id="sub-yet">
+      <div class="inf" style="margin-top:10px"><i class="ti ti-bulb" style="font-size:13px;vertical-align:-2px" aria-hidden="true"></i> Continue to choose your platform. The platform configurator will generate a full bill of materials with component costs and recommended sourcing.</div>
+    </div>
+  </div>
+  <div class="btnrow">
+    <button class="btn" onclick="go(0)"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+    <button class="btn pri" id="btn1" onclick="step1next()">Continue <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+  </div>
+</div>
+
+<!-- ═══ STEP 2: PLATFORM CONFIGURATOR ═══ -->
+<div class="scr" id="s2">
+  <div class="card">
+    <div class="ct"><i class="ti ti-layout-grid" style="font-size:16px" aria-hidden="true"></i> Platform category</div>
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px">Select the type of robotic platform. You can also choose a <strong>combination</strong> (UGV + manipulator, etc.).</div>
+
+    <div class="fg fg3" id="cat-grid" style="margin-bottom:10px">
+      <div class="pc" id="cat-ugv" onclick="selcat('ugv')"><i class="ti ti-car pi" aria-hidden="true"></i><div class="pl">UGV</div><div class="ps">Ground vehicle</div></div>
+      <div class="pc" id="cat-uav" onclick="selcat('uav')"><i class="ti ti-drone pi" aria-hidden="true"></i><div class="pl">UAV</div><div class="ps">Aerial vehicle</div></div>
+      <div class="pc" id="cat-manip" onclick="selcat('manip')"><i class="ti ti-hand-grab pi" aria-hidden="true"></i><div class="pl">Manipulator</div><div class="ps">Robotic arm</div></div>
+    </div>
+
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">Combination builds (select base platform above first, then add-ons below)</div>
+    <div id="combo-pills">
+      <span class="pill" id="combo-ugv-manip" onclick="tcombo('ugv-manip')"><i class="ti ti-car" style="font-size:11px" aria-hidden="true"></i> UGV + manipulator</span>
+      <span class="pill" id="combo-ugv-manip-grip" onclick="tcombo('ugv-manip-grip')"><i class="ti ti-car" style="font-size:11px" aria-hidden="true"></i> UGV + manip + gripper</span>
+      <span class="pill" id="combo-manip-grip" onclick="tcombo('manip-grip')"><i class="ti ti-hand-grab" style="font-size:11px" aria-hidden="true"></i> Manipulator + gripper only</span>
+    </div>
+    <div class="combo-note" id="combo-note"></div>
+  </div>
+
+  <!-- UGV sub-type -->
+  <div class="sub card" id="sub-ugv">
+    <div class="ct"><i class="ti ti-steering-wheel" style="font-size:15px" aria-hidden="true"></i> UGV drive type</div>
+    <div class="fg fg2">
+      <label class="rc" id="ugv-diff" onclick="selsub('ugv','diff')"><input type="radio" name="ugvsub" value="diff">
+        <div><div class="rl">Differential drive</div><div class="rs">2-motor — indoor navigation, line following, SLAM</div></div>
+      </label>
+      <label class="rc" id="ugv-4wd" onclick="selsub('ugv','4wd')"><input type="radio" name="ugvsub" value="4wd">
+        <div><div class="rl">Four-wheel drive</div><div class="rs">4WD chassis — outdoor terrain, higher payload</div></div>
+      </label>
+    </div>
+  </div>
+
+  <!-- UAV sub-type -->
+  <div class="sub card" id="sub-uav">
+    <div class="ct"><i class="ti ti-drone" style="font-size:15px" aria-hidden="true"></i> UAV airframe type</div>
+    <div class="fg fg3">
+      <label class="rc" id="uav-quad" onclick="selsub('uav','quad')"><input type="radio" name="uavsub" value="quad">
+        <div><div class="rl">Quadcopter</div><div class="rs">4 rotors — stable, beginner friendly</div></div>
+      </label>
+      <label class="rc" id="uav-hexa" onclick="selsub('uav','hexa')"><input type="radio" name="uavsub" value="hexa">
+        <div><div class="rl">Hexacopter</div><div class="rs">6 rotors — redundancy, higher payload</div></div>
+      </label>
+      <label class="rc" id="uav-fixed" onclick="selsub('uav','fixed')"><input type="radio" name="uavsub" value="fixed">
+        <div><div class="rl">Fixed wing</div><div class="rs">Long endurance — mapping, surveillance</div></div>
+      </label>
+    </div>
+  </div>
+
+  <!-- Manipulator config -->
+  <div class="sub card" id="sub-manip">
+    <div class="ct"><i class="ti ti-hand-grab" style="font-size:15px" aria-hidden="true"></i> Manipulator configuration</div>
+    <div class="fg fg2" style="margin-bottom:10px">
+      <div><div class="fl">Number of DoF</div>
+        <select id="dof-sel">
+          <option value="">Select DoF</option>
+          <option value="3">3 DoF</option>
+          <option value="4">4 DoF</option>
+          <option value="5">5 DoF</option>
+          <option value="6">6 DoF</option>
+        </select>
+      </div>
+      <div></div>
+    </div>
+    <div class="fl" style="margin-bottom:7px">Gripper type</div>
+    <div class="fg fg2">
+      <label class="rc" id="grip-1pt" onclick="selgrip('1pt')"><input type="radio" name="grip" value="1pt">
+        <div><div class="rl">1-point gripper</div><div class="rs">Single-axis clamp or hook — simple open/close</div></div>
+      </label>
+      <label class="rc" id="grip-para" onclick="selgrip('para')"><input type="radio" name="grip" value="para">
+        <div><div class="rl">Parallel gripper</div><div class="rs">Two-jaw parallel fingers — precise pick and place</div></div>
+      </label>
+    </div>
+  </div>
+
+  <!-- Budget -->
+  <div class="card">
+    <div class="ct"><i class="ti ti-wallet" style="font-size:16px" aria-hidden="true"></i> Budget</div>
+    <div class="fg fg2">
+      <div>
+        <div class="fl">Your budget (₹)</div>
+        <input type="number" id="p-budget" placeholder="Enter amount" min="500" oninput="checkbudget()">
+        <div class="min-price-badge" id="min-badge" style="display:none"><i class="ti ti-info-circle" style="font-size:12px" aria-hidden="true"></i> <span id="min-txt"></span></div>
+      </div>
+      <div><div class="fl">Target application</div>
+        <select id="p-app">
+          <option value="">Select application</option>
+          <option value="learning">Academic / learning</option>
+          <option value="competition">Competition / hackathon</option>
+          <option value="research">Research prototype</option>
+          <option value="industry">Industry deployment</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="btnrow">
+    <button class="btn" onclick="go(1)"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+    <button class="btn pri" onclick="genbom()">Generate BOM <i class="ti ti-sparkles" aria-hidden="true"></i></button>
+  </div>
+</div>
+
+<!-- ═══ STEP 3: BOM ═══ -->
+<div class="scr" id="s3">
+  <div class="card">
+    <div class="ct"><i class="ti ti-list-check" style="font-size:16px" aria-hidden="true"></i> Bill of materials — <span id="bom-title" style="font-weight:400;color:var(--color-text-secondary)"></span></div>
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px" id="bom-appdesc"></div>
+    <div style="overflow-x:auto">
+      <table class="bom-tbl">
+        <thead><tr><th>Component</th><th>Qty</th><th>Cost (₹)</th><th>Application use</th></tr></thead>
+        <tbody id="bom-body"></tbody>
+      </table>
+    </div>
+    <div class="totrow">
+      <span style="font-size:12px;font-weight:500">Estimated total</span>
+      <span style="font-size:16px;font-weight:500" id="bom-total"></span>
+    </div>
+    <div style="margin-top:10px;padding:9px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:11px;color:var(--color-text-secondary)" id="bom-note"></div>
+    <div style="margin-top:8px;font-size:11px;color:var(--color-text-secondary)">
+      <i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px" aria-hidden="true"></i> Source from: Robu.in · Electronicscomp.com · Amazon India · Mouser India
+    </div>
+  </div>
+  <div class="btnrow">
+    <button class="btn" onclick="go(2)"><i class="ti ti-arrow-left" aria-hidden="true"></i> Reconfigure</button>
+    <button class="btn suc" onclick="go(4)">Proceed to build pipeline <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+  </div>
+</div>
+
+<!-- ═══ STEP 4: BUILD PIPELINE HANDOFF ═══ -->
+<div class="scr" id="s4">
+  <div class="card">
+    <div class="ct"><i class="ti ti-rocket" style="font-size:16px" aria-hidden="true"></i> Ready to build, <span id="greet-name">learner</span></div>
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:14px">Profile and BOM confirmed. The platform now hands off to the build pipeline.</div>
+    <div class="fg fg2" style="margin-bottom:14px">
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px">
+        <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px">Learner</div>
+        <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)" id="sum-name">—</div>
+        <div style="font-size:11px;color:var(--color-text-secondary)" id="sum-role">—</div>
+      </div>
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px">
+        <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px">Platform / board</div>
+        <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)" id="sum-plat">—</div>
+        <div style="font-size:11px;color:var(--color-text-secondary)" id="sum-bud">—</div>
+      </div>
+    </div>
+
+    <div class="pline"><i class="ti ti-camera" style="font-size:15px;color:var(--color-text-info)" aria-hidden="true"></i>
+      <div class="pline-lbl">Layer 0 — Board identification<div class="pline-sub">Camera detects board · loads pinout spec · 360° twin rendered</div></div>
+      <span class="badge-next">Next</span>
+    </div>
+    <div class="pline" style="opacity:.55"><i class="ti ti-augmented-reality" style="font-size:15px" aria-hidden="true"></i>
+      <div class="pline-lbl">Layer 1 — AR guided assembly<div class="pline-sub">Ghost-line wiring overlays on live camera feed</div></div>
+      <span class="badge-pend">Pending</span>
+    </div>
+    <div class="pline" style="opacity:.55"><i class="ti ti-brain" style="font-size:15px" aria-hidden="true"></i>
+      <div class="pline-lbl">Layer 2 — VLM verification<div class="pline-sub">Gemini 1.5 Flash · continuous wiring check · voice correction</div></div>
+      <span class="badge-pend">Pending</span>
+    </div>
+    <div class="pline" style="opacity:.55"><i class="ti ti-upload" style="font-size:15px" aria-hidden="true"></i>
+      <div class="pline-lbl">Layer 3 — Build and flash<div class="pline-sub">WebSerial firmware upload · heartbeat check · actuator test</div></div>
+      <span class="badge-pend">Pending</span>
+    </div>
+    <div class="pline" style="opacity:.55"><i class="ti ti-users" style="font-size:15px" aria-hidden="true"></i>
+      <div class="pline-lbl">Layer 5 — Mentor dashboard sync<div class="pline-sub">All session events pushed live via WebSocket · Redis pub/sub</div></div>
+      <span class="badge-pend">Pending</span>
+    </div>
+  </div>
+
+  <div style="background:var(--color-background-success);border:0.5px solid var(--color-border-success);border-radius:var(--border-radius-md);padding:11px 14px;display:flex;align-items:center;gap:10px;margin-top:.75rem">
+    <span class="pulse" style="color:var(--color-text-success)"></span>
+    <div>
+      <div style="font-size:13px;font-weight:500;color:var(--color-text-success)">Mentor dashboard is live</div>
+      <div style="font-size:11px;color:var(--color-text-success);opacity:.85">Your session is visible to your mentor in real time — Layer 5 sync active</div>
+    </div>
+  </div>
+
+  <div class="btnrow">
+    <button class="btn" onclick="go(3)"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+    <button class="btn pri" onclick="sendPrompt('Start Layer 0 board identification — show camera feed and load board spec for my build')">Launch build pipeline <i class="ti ti-rocket" aria-hidden="true"></i></button>
+  </div>
+</div>
+
+</div>
+
+<script>
+var ST={comp:'',cat:'',ugvsub:'',uavsub:'',grip:'',combo:'',dof:'',step:0};
+
+var MINS={diff:2500,'4wd':4500,quad:8000,hexa:15000,fixed:12000,manip:3000,'ugv-manip':7000,'ugv-manip-grip':8500,'manip-grip':4000};
+var MINLABELS={diff:'₹2,500','4wd':'₹4,500',quad:'₹8,000',hexa:'₹15,000',fixed:'₹12,000',manip:'₹3,000','ugv-manip':'₹7,000','ugv-manip-grip':'₹8,500','manip-grip':'₹4,000'};
+
+function tpill(el){el.classList.toggle('on')}
+
+function updsteps(n){
+  for(var i=0;i<5;i++){
+    var d=document.getElementById('d'+i),c=document.getElementById('c'+i);
+    d.className='sd'+(i===n?' act':i<n?' don':'');
+    d.innerHTML=i<n?'<i class="ti ti-check" style="font-size:11px" aria-hidden="true"></i>':(i+1);
+    var sl=d.nextElementSibling;if(sl){sl.className='sl'+(i===n?' act':'');}
+    if(c)c.className='sc'+(i<n?' don':'');
+  }
+}
+
+function go(n){
+  document.querySelectorAll('.scr').forEach(function(s,i){s.classList.toggle('on',i===n);});
+  updsteps(n); ST.step=n;
+  if(n===4)fillsummary();
+}
+
+function selcomp(v){
+  ST.comp=v;
+  document.getElementById('rc-have').classList.toggle('sel',v==='have');
+  document.getElementById('rc-yet').classList.toggle('sel',v==='yet');
+  document.getElementById('sub-have').classList.toggle('on',v==='have');
+  document.getElementById('sub-yet').classList.toggle('on',v==='yet');
+}
+
+function step1next(){
+  if(!ST.comp){alert('Please select whether you have purchased components.');return;}
+  go(ST.comp==='have'?4:2);
+  if(ST.comp==='have'){
+    document.getElementById('sum-plat').textContent=document.getElementById('p-board').value||'Auto-detected from camera';
+    document.getElementById('sum-bud').textContent='Components on hand';
+    fillsummary();
+  }
+}
+
+function selcat(v){
+  ST.cat=v; ST.combo='';
+  ['ugv','uav','manip'].forEach(function(c){
+    document.getElementById('cat-'+c).classList.toggle('sel',c===v);
+    document.getElementById('sub-'+c).classList.toggle('on',c===v);
+  });
+  document.querySelectorAll('#combo-pills .pill').forEach(function(p){p.classList.remove('on');});
+  document.getElementById('combo-note').textContent='';
+  checkbudget();
+}
+
+function tcombo(v){
+  ST.combo=ST.combo===v?'':v;
+  document.querySelectorAll('#combo-pills .pill').forEach(function(p){p.classList.remove('on');});
+  if(ST.combo){
+    document.getElementById('combo-'+v).classList.add('on');
+    var notes={'ugv-manip':'UGV base + robotic arm mounted on chassis','ugv-manip-grip':'UGV base + robotic arm + end-effector gripper','manip-grip':'Standalone robotic arm with gripper — no mobile base'};
+    document.getElementById('combo-note').textContent=notes[v]||'';
+    if(v.includes('manip'))document.getElementById('sub-manip').classList.add('on');
+    if(v.includes('ugv'))document.getElementById('sub-ugv').classList.add('on');
+  } else {
+    document.getElementById('combo-note').textContent='';
+  }
+  checkbudget();
+}
+
+function selsub(type,v){
+  if(type==='ugv'){ST.ugvsub=v;['ugv-diff','ugv-4wd'].forEach(function(id){document.getElementById(id).classList.toggle('sel',id==='ugv-'+v);});}
+  if(type==='uav'){ST.uavsub=v;['uav-quad','uav-hexa','uav-fixed'].forEach(function(id){document.getElementById(id).classList.toggle('sel',id==='uav-'+v);});}
+  checkbudget();
+}
+
+function selgrip(v){
+  ST.grip=v;
+  document.getElementById('grip-1pt').classList.toggle('sel',v==='1pt');
+  document.getElementById('grip-para').classList.toggle('sel',v==='para');
+}
+
+function getkey(){
+  if(ST.combo)return ST.combo;
+  if(ST.cat==='ugv')return ST.ugvsub||'diff';
+  if(ST.cat==='uav')return ST.uavsub||'quad';
+  if(ST.cat==='manip')return 'manip';
+  return '';
+}
+
+function checkbudget(){
+  var key=getkey(),badge=document.getElementById('min-badge'),txt=document.getElementById('min-txt');
+  if(key&&MINS[key]){badge.style.display='inline-flex';txt.textContent='Minimum starting price for this platform: '+MINLABELS[key];}
+  else{badge.style.display='none';}
+}
+
+var BOMS={
+  diff:{title:'UGV — Differential drive',app:'Indoor navigation, line-following, obstacle avoidance, SLAM demos',items:[
+    {n:'Arduino UNO R3',q:1,c:650,u:'Main MCU — motor control + sensor reads'},
+    {n:'L298N dual motor driver',q:1,c:180,u:'H-bridge driver for two DC motors'},
+    {n:'TT gear DC motors + encoders',q:2,c:320,u:'Left/right drive wheels'},
+    {n:'2-wheel differential chassis kit',q:1,c:380,u:'Frame, caster wheel, mounts'},
+    {n:'HC-SR04 ultrasonic sensor',q:3,c:180,u:'Obstacle detection — front and sides'},
+    {n:'IR line-following sensor',q:5,c:200,u:'Line detection, edge sensing'},
+    {n:'MPU-6050 IMU',q:1,c:180,u:'Orientation and odometry assist'},
+    {n:'12V Li-ion 3000mAh battery',q:1,c:650,u:'Main power source'},
+    {n:'Mini breadboard + jumper wires',q:1,c:120,u:'Sensor prototyping connections'},
+    {n:'USB cable + misc hardware',q:1,c:80,u:'Programming, assembly'},
+  ]},
+  '4wd':{title:'UGV — Four-wheel drive',app:'Outdoor terrain, agricultural robotics, load-carrying, remote telemetry',items:[
+    {n:'ESP32 DevKit V1',q:1,c:480,u:'MCU with Wi-Fi — remote monitoring'},
+    {n:'L298N motor driver',q:2,c:360,u:'Two drivers for 4 DC motors'},
+    {n:'12V high-torque DC motors',q:4,c:1200,u:'4WD drive — higher torque output'},
+    {n:'4WD metal chassis kit',q:1,c:950,u:'Rigid frame for outdoor use'},
+    {n:'HC-SR04 ultrasonic',q:2,c:120,u:'Front obstacle avoidance'},
+    {n:'GPS NEO-6M',q:1,c:480,u:'Outdoor waypoint navigation'},
+    {n:'MPU-9250 IMU (9-axis)',q:1,c:280,u:'Full orientation + compass heading'},
+    {n:'3S LiPo 5000mAh',q:1,c:1400,u:'High-current 4WD power source'},
+    {n:'Voltage regulator / BEC',q:1,c:180,u:'Regulate LiPo to 5V for MCU'},
+    {n:'Jumpers, connectors, misc',q:1,c:150,u:'Wiring and assembly'},
+  ]},
+  quad:{title:'UAV — Quadcopter',app:'Aerial photography, inspection, search and rescue, flight control learning',items:[
+    {n:'F450 quadcopter frame',q:1,c:650,u:'450mm wheelbase airframe'},
+    {n:'A2212 1000KV BLDC motors',q:4,c:1200,u:'One motor per arm — 4 total'},
+    {n:'30A ESC',q:4,c:960,u:'Motor speed controller per axis'},
+    {n:'10×4.5 inch propeller pairs',q:2,c:280,u:'CW and CCW thrust pairs'},
+    {n:'APM 2.8 flight controller',q:1,c:2200,u:'Autopilot, stabilisation, PID'},
+    {n:'FlySky FS-i6 TX + FS-iA6 RX',q:1,c:2800,u:'6-channel RC transmitter + receiver'},
+    {n:'3S 2200mAh LiPo',q:1,c:950,u:'Main flight battery'},
+    {n:'LiPo balance charger',q:1,c:650,u:'Safe 3S charging'},
+    {n:'Power distribution board',q:1,c:180,u:'Distribute power to 4 ESCs'},
+    {n:'XT60 connectors + misc',q:1,c:200,u:'Battery connection, assembly'},
+  ]},
+  hexa:{title:'UAV — Hexacopter',app:'Payload inspection, LiDAR mapping, delivery, motor-redundancy research',items:[
+    {n:'S550 hexacopter frame',q:1,c:1200,u:'6-arm 550mm airframe'},
+    {n:'A2212 920KV BLDC motors',q:6,c:1800,u:'6 motors — one per arm'},
+    {n:'40A ESC',q:6,c:1440,u:'Higher-current ESCs for hexa'},
+    {n:'12×4.5 inch prop pairs',q:3,c:420,u:'3 CW + 3 CCW prop sets'},
+    {n:'Pixhawk 4 flight controller',q:1,c:4500,u:'Advanced autopilot for hex config'},
+    {n:'FlySky FS-i10 + receiver',q:1,c:4200,u:'10-channel TX for payload control'},
+    {n:'4S 5000mAh LiPo',q:1,c:2800,u:'High-capacity flight battery'},
+    {n:'Dual LiPo charger',q:1,c:1200,u:'4S charging capability'},
+    {n:'6-port power dist. board',q:1,c:280,u:'Power to 6 ESCs'},
+    {n:'GPS module + telemetry',q:1,c:1800,u:'Navigation + ground station link'},
+  ]},
+  fixed:{title:'UAV — Fixed wing',app:'Mapping, surveillance, agriculture, long-endurance patrol',items:[
+    {n:'Skywalker X8 flying wing',q:1,c:3500,u:'2m EPO foam airframe'},
+    {n:'A2826 1400KV BLDC motor',q:1,c:680,u:'Forward thrust — single puller'},
+    {n:'80A ESC',q:1,c:650,u:'High-current ESC for forward flight'},
+    {n:'15×8 inch propeller',q:2,c:280,u:'Pusher/puller flight prop'},
+    {n:'9g servos',q:4,c:480,u:'Aileron, elevator, rudder control'},
+    {n:'Pixhawk / APM FC',q:1,c:2200,u:'Fixed-wing autopilot'},
+    {n:'FlySky FS-i6 + receiver',q:1,c:2800,u:'RC control'},
+    {n:'4S 4000mAh LiPo',q:1,c:2200,u:'Endurance flight battery'},
+    {n:'GPS + airspeed sensor',q:1,c:1400,u:'Navigation + auto-throttle'},
+    {n:'Mount + misc',q:1,c:400,u:'Motor mounting, assembly'},
+  ]},
+  manip:{title:'Robotic arm manipulator',app:'Pick-and-place, assembly automation, kinematics education, research',items:[
+    {n:'Arduino UNO R3',q:1,c:650,u:'MCU for servo coordination'},
+    {n:'MG996R high-torque servo',q:null,c:320,u:'Joint actuators — qty = DoF'},
+    {n:'PCA9685 servo driver board',q:1,c:280,u:'I2C 16-channel servo controller'},
+    {n:'5V 10A power supply',q:1,c:480,u:'Powers all servos simultaneously'},
+    {n:'Acrylic arm links (laser cut)',q:1,c:1200,u:'Structural joints and links'},
+    {n:'MPU-6050 IMU',q:1,c:180,u:'End-effector orientation feedback'},
+    {n:'Jumpers, standoffs, misc',q:1,c:150,u:'Assembly hardware'},
+  ]},
+  'ugv-manip':{title:'UGV + manipulator combination',app:'Mobile manipulation, warehouse pick-and-place, inspection with reach',items:[
+    {n:'Arduino MEGA 2560',q:1,c:950,u:'Extended I/O for UGV + arm control'},
+    {n:'L298N motor driver',q:1,c:180,u:'UGV wheel drive'},
+    {n:'TT DC motors',q:2,c:320,u:'Differential drive base'},
+    {n:'2-wheel chassis + caster',q:1,c:380,u:'Mobile base frame'},
+    {n:'MG996R servo (arm joints)',q:4,c:1280,u:'4-DoF arm mounted on UGV'},
+    {n:'PCA9685 servo driver',q:1,c:280,u:'Servo control over I2C'},
+    {n:'HC-SR04 ultrasonic',q:2,c:120,u:'Base obstacle avoidance'},
+    {n:'12V Li-ion 5000mAh',q:1,c:950,u:'Power for drive + arm'},
+    {n:'Voltage regulator 5V/3A',q:1,c:180,u:'Logic power rail'},
+    {n:'Acrylic arm + mounts',q:1,c:1200,u:'Arm structure + UGV mounting plate'},
+  ]},
+  'ugv-manip-grip':{title:'UGV + manipulator + gripper',app:'Autonomous pick-and-place, logistics, competition challenge tasks',items:[
+    {n:'Arduino MEGA 2560',q:1,c:950,u:'Control MCU for full system'},
+    {n:'L298N motor driver',q:1,c:180,u:'UGV wheel drive'},
+    {n:'TT DC motors',q:2,c:320,u:'Mobile base drive'},
+    {n:'2-wheel chassis + caster',q:1,c:380,u:'Mobile base frame'},
+    {n:'MG996R servo (arm joints)',q:4,c:1280,u:'4-DoF arm'},
+    {n:'SG90 servo (gripper)',q:2,c:240,u:'Parallel finger gripper actuation'},
+    {n:'PCA9685 servo driver',q:1,c:280,u:'Servo controller I2C'},
+    {n:'HC-SR04 ultrasonic',q:2,c:120,u:'Obstacle avoidance'},
+    {n:'12V Li-ion 5000mAh',q:1,c:950,u:'System power'},
+    {n:'Acrylic arm + gripper links',q:1,c:1500,u:'Arm + end-effector structure'},
+    {n:'Voltage regulator + misc',q:1,c:200,u:'Power + assembly'},
+  ]},
+  'manip-grip':{title:'Manipulator + gripper (standalone)',app:'Benchtop pick-and-place, assembly training, kinematics lab',items:[
+    {n:'Arduino UNO R3',q:1,c:650,u:'MCU for arm + gripper'},
+    {n:'MG996R servo (joints)',q:null,c:320,u:'Arm joints — qty = DoF'},
+    {n:'SG90 servo (gripper jaw)',q:2,c:240,u:'Parallel gripper actuation'},
+    {n:'PCA9685 servo driver',q:1,c:280,u:'I2C servo controller'},
+    {n:'5V 10A power supply',q:1,c:480,u:'Powers all servos'},
+    {n:'Acrylic arm + gripper links',q:1,c:1500,u:'Full arm + gripper structure'},
+    {n:'MPU-6050 IMU',q:1,c:180,u:'End-effector feedback'},
+    {n:'Jumpers, standoffs, misc',q:1,c:150,u:'Assembly'},
+  ]},
+};
+
+function genbom(){
+  var key=getkey();
+  if(!key){alert('Please select a platform category and configuration.');return;}
+  var bud=parseInt(document.getElementById('p-budget').value)||0;
+  var minp=MINS[key]||0;
+  if(bud>0&&bud<minp){
+    if(!confirm('Your budget ₹'+bud.toLocaleString()+' is below the minimum ₹'+minp.toLocaleString()+' for this platform. Show BOM anyway?'))return;
+  }
+  var dof=parseInt(document.getElementById('dof-sel').value)||4;
+  var bom=BOMS[key];
+  if(!bom){alert('BOM not available for this combination.');return;}
+  document.getElementById('bom-title').textContent=bom.title;
+  var appLabels={'learning':'Academic / learning','competition':'Competition / hackathon','research':'Research prototype','industry':'Industry deployment'};
+  var appv=document.getElementById('p-app').value;
+  document.getElementById('bom-appdesc').textContent=bom.app+(appv?' — '+appLabels[appv]:'');
+  var tbody=document.getElementById('bom-body');tbody.innerHTML='';
+  var total=0;
+  bom.items.forEach(function(item){
+    var qty=item.q===null?dof:item.q;
+    var cost=item.c*qty;total+=cost;
+    var tr=document.createElement('tr');
+    var gripNote=item.n.includes('gripper')||item.n.toLowerCase().includes('grip')?'<br><span class="appbadge">'+(ST.grip==='para'?'Parallel':'1-point')+' gripper</span>':'';
+    tr.innerHTML='<td>'+item.n+(item.q===null?'<br><span style="font-size:10px;color:var(--color-text-tertiary)">Qty = '+dof+' DoF</span>':'')+'</td><td style="text-align:center">'+qty+'</td><td style="text-align:right">₹'+cost.toLocaleString()+'</td><td>'+item.u+gripNote+'</td>';
+    tbody.appendChild(tr);
+  });
+  var over=bud>0&&total>bud;
+  document.getElementById('bom-total').textContent='₹'+total.toLocaleString();
+  document.getElementById('bom-total').style.color=over?'var(--color-text-danger)':'var(--color-text-success)';
+  document.getElementById('bom-note').textContent=over
+    ?'⚠ Total ₹'+total.toLocaleString()+' exceeds budget ₹'+bud.toLocaleString()+'. Consider a simpler base platform or reduce DoF.'
+    :'✓ Within budget'+(bud>0?' — saving ₹'+(bud-total).toLocaleString():'')+'. Source components from Robu.in, Electronicscomp, or Amazon India.';
+  go(3);
+}
+
+function fillsummary(){
+  var name=document.getElementById('p-name').value||'Learner';
+  document.getElementById('greet-name').textContent=name;
+  document.getElementById('sum-name').textContent=name;
+  var role=(document.getElementById('p-role').value||'');
+  var inst=(document.getElementById('p-inst').value||'');
+  document.getElementById('sum-role').textContent=[role,inst].filter(Boolean).join(' · ')||'—';
+  if(ST.comp==='have'){
+    document.getElementById('sum-plat').textContent=document.getElementById('p-board').value||'Auto-detected from camera';
+    document.getElementById('sum-bud').textContent='Components on hand';
+  } else {
+    var key=getkey();
+    var titl=BOMS[key]?BOMS[key].title:'Custom platform';
+    document.getElementById('sum-plat').textContent=titl;
+    var bud=parseInt(document.getElementById('p-budget').value)||0;
+    document.getElementById('sum-bud').textContent=bud?'₹'+bud.toLocaleString()+' budget':'BOM generated';
+  }
+}
+</script>
